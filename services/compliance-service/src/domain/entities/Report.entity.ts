@@ -1,4 +1,4 @@
-import { ReportStatus, ReportType } from '@certiflow/shared'
+import { ExtractionStrategy, ReportStatus, ReportType } from '@certiflow/shared'
 
 interface ReportProps {
   id: string
@@ -7,6 +7,9 @@ interface ReportProps {
   fileUrl: string
   status: ReportStatus
   notes?: string
+  extractionStrategy: ExtractionStrategy
+  ocrProvider?: string
+  ocrConfidence?: number
   uploadedAt: Date
 }
 
@@ -23,6 +26,9 @@ export class ReportEntity {
   get fileUrl() { return this.props.fileUrl }
   get status() { return this.props.status }
   get notes() { return this.props.notes }
+  get extractionStrategy() { return this.props.extractionStrategy }
+  get ocrProvider() { return this.props.ocrProvider }
+  get ocrConfidence() { return this.props.ocrConfidence }
   get uploadedAt() { return this.props.uploadedAt }
 
   canBeAnalyzed(): boolean {
@@ -57,10 +63,24 @@ export class ReportEntity {
     return new ReportEntity({ ...this.props, status: 'FAILED' })
   }
 
-  static create(props: Omit<ReportProps, 'status' | 'uploadedAt'>): ReportEntity {
+  recordExtraction(input: {
+    extractionStrategy: ExtractionStrategy
+    ocrProvider?: string
+    ocrConfidence?: number
+  }): ReportEntity {
+    return new ReportEntity({
+      ...this.props,
+      extractionStrategy: input.extractionStrategy,
+      ocrProvider: input.ocrProvider,
+      ocrConfidence: input.ocrConfidence,
+    })
+  }
+
+  static create(props: Omit<ReportProps, 'status' | 'uploadedAt' | 'extractionStrategy' | 'ocrProvider' | 'ocrConfidence'>): ReportEntity {
     return new ReportEntity({
       ...props,
       status: 'PENDING',
+      extractionStrategy: 'NONE',
       uploadedAt: new Date(),
     })
   }

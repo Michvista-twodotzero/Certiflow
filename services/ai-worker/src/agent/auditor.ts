@@ -73,7 +73,7 @@ export async function auditReport(fileUrl: string, projectName: string): Promise
     const rawResponse = result.response.text()
 
     logger.info('Gemini analysis complete, parsing response')
-    return parseGeminiResponse(rawResponse)
+    return parseGeminiResponse(rawResponse, extractedDocument)
   } catch (error) {
     logger.error('Audit failed', { error })
     throw error
@@ -84,7 +84,7 @@ export async function auditReport(fileUrl: string, projectName: string): Promise
   }
 }
 
-function parseGeminiResponse(raw: string): AuditResult {
+function parseGeminiResponse(raw: string, extractedDocument: Awaited<ReturnType<typeof extractDocumentContent>>): AuditResult {
   try {
     const cleaned = raw.replace(/```json|```/g, '').trim()
     const parsed = JSON.parse(cleaned)
@@ -93,6 +93,13 @@ function parseGeminiResponse(raw: string): AuditResult {
       violations: parsed.violations || [],
       summary: parsed.summary || 'Analysis complete.',
       actionableCount: parsed.actionableCount || parsed.violations?.length || 0,
+      extraction: {
+        strategy: extractedDocument.strategy,
+        sourceKind: extractedDocument.sourceKind,
+        ocrPerformed: extractedDocument.ocrPerformed,
+        ocrProvider: extractedDocument.ocrProvider,
+        ocrConfidence: extractedDocument.ocrConfidence,
+      },
     }
   } catch (error) {
     logger.error('Failed to parse Gemini response', { raw, error })
@@ -100,6 +107,13 @@ function parseGeminiResponse(raw: string): AuditResult {
       violations: [],
       summary: 'AI analysis could not be parsed. Manual review required.',
       actionableCount: 0,
+      extraction: {
+        strategy: extractedDocument.strategy,
+        sourceKind: extractedDocument.sourceKind,
+        ocrPerformed: extractedDocument.ocrPerformed,
+        ocrProvider: extractedDocument.ocrProvider,
+        ocrConfidence: extractedDocument.ocrConfidence,
+      },
     }
   }
 }

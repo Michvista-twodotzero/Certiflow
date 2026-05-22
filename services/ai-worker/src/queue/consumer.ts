@@ -42,7 +42,12 @@ export function startQueueConsumer() {
 
       await prisma.report.update({
         where: { id: reportId },
-        data: { status: 'COMPLETE' },
+        data: {
+          status: 'COMPLETE',
+          extractionStrategy: auditResult.extraction.strategy,
+          ocrProvider: auditResult.extraction.ocrProvider ?? null,
+          ocrConfidence: auditResult.extraction.ocrConfidence ?? null,
+        },
       })
 
       logger.info('Report completed', { reportId })

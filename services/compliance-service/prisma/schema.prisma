@@ -41,6 +41,9 @@ model Report {
   fileUrl    String
   status     ReportStatus @default(PENDING)
   notes      String?
+  extractionStrategy ExtractionStrategy @default(NONE)
+  ocrProvider String?
+  ocrConfidence Float?
   uploadedAt DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
@@ -84,4 +87,10 @@ enum ReportType {
   DAILY_SAFETY_LOG
   SITE_PHOTO
   INCIDENT_REPORT
+}
+
+enum ExtractionStrategy {
+  NATIVE_TEXT
+  OCR
+  NONE
 }

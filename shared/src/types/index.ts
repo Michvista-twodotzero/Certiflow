@@ -4,6 +4,8 @@ export type ViolationSeverity = 'CRITICAL' | 'MAJOR' | 'MINOR'
 
 export type ReportType = 'DAILY_SAFETY_LOG' | 'SITE_PHOTO' | 'INCIDENT_REPORT'
 
+export type ExtractionStrategy = 'NATIVE_TEXT' | 'OCR' | 'NONE'
+
 export interface Project {
   id: string
   name: string
@@ -20,6 +22,9 @@ export interface Report {
   fileUrl: string
   status: ReportStatus
   notes?: string
+  extractionStrategy?: ExtractionStrategy
+  ocrProvider?: string
+  ocrConfidence?: number
   uploadedAt: Date
 }
 
@@ -63,6 +68,13 @@ export interface AuditResult {
   violations: AuditViolationResult[]
   summary: string
   actionableCount: number
+  extraction: {
+    strategy: ExtractionStrategy
+    sourceKind: 'pdf' | 'text' | 'image' | 'unknown'
+    ocrPerformed: boolean
+    ocrProvider?: string
+    ocrConfidence?: number
+  }
 }
 
 export interface JwtPayload {

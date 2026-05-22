@@ -1,7 +1,7 @@
 import { prisma } from '../prisma/client'
 import { IReportRepository } from '../../domain/repositories'
 import { ReportEntity } from '../../domain/entities/Report.entity'
-import { ReportStatus, ReportType } from '@certiflow/shared'
+import { ExtractionStrategy, ReportStatus, ReportType } from '@certiflow/shared'
 
 type ReportRecord = {
   id: string
@@ -10,6 +10,9 @@ type ReportRecord = {
   fileUrl: string
   status: ReportStatus
   notes: string | null
+  extractionStrategy: ExtractionStrategy
+  ocrProvider: string | null
+  ocrConfidence: number | null
   uploadedAt: Date
 }
 
@@ -22,6 +25,9 @@ export class PrismaReportRepository implements IReportRepository {
       fileUrl: record.fileUrl,
       status: record.status,
       notes: record.notes ?? undefined,
+      extractionStrategy: record.extractionStrategy,
+      ocrProvider: record.ocrProvider ?? undefined,
+      ocrConfidence: record.ocrConfidence ?? undefined,
       uploadedAt: record.uploadedAt,
     })
   }
@@ -70,6 +76,9 @@ export class PrismaReportRepository implements IReportRepository {
         fileUrl: data.fileUrl,
         status: data.status,
         notes: data.notes,
+        extractionStrategy: data.extractionStrategy,
+        ocrProvider: data.ocrProvider,
+        ocrConfidence: data.ocrConfidence,
       },
     })
 
@@ -80,7 +89,12 @@ export class PrismaReportRepository implements IReportRepository {
     const data = report.toObject()
     const record = await prisma.report.update({
       where: { id: data.id },
-      data: { status: data.status },
+      data: {
+        status: data.status,
+        extractionStrategy: data.extractionStrategy,
+        ocrProvider: data.ocrProvider,
+        ocrConfidence: data.ocrConfidence,
+      },
     })
 
     return this.toDomain(record as ReportRecord)

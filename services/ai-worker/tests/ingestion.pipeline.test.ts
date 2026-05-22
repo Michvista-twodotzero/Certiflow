@@ -23,7 +23,7 @@ describe('ingestion pipeline', () => {
 
     const result = await extractDocumentContentWithProvider('temp.txt', 'https://example.com/report.txt', mockOcrProvider)
 
-    expect(result.strategy).toBe('native-text')
+    expect(result.strategy).toBe('NATIVE_TEXT')
     expect(result.content).toBe('permit log contents')
     expect(mockOcrProvider.extractText).not.toHaveBeenCalled()
   })
@@ -37,7 +37,7 @@ describe('ingestion pipeline', () => {
 
     const result = await extractDocumentContentWithProvider('temp.png', 'https://example.com/report.png', mockOcrProvider)
 
-    expect(result.strategy).toBe('ocr')
+    expect(result.strategy).toBe('OCR')
     expect(result.content).toContain('scaffold')
     expect(result.ocrPerformed).toBe(true)
     expect(result.ocrProvider).toBe('mock')
@@ -54,7 +54,7 @@ describe('ingestion pipeline', () => {
 
     const result = await extractDocumentContentWithProvider('temp.pdf', 'https://example.com/report.pdf', mockOcrProvider)
 
-    expect(result.strategy).toBe('ocr')
+    expect(result.strategy).toBe('OCR')
     expect(result.content).toContain('excavation')
     expect(mockOcrProvider.extractText).toHaveBeenCalled()
   })

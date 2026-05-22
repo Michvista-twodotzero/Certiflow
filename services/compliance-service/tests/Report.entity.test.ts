@@ -8,6 +8,7 @@ describe('ReportEntity', () => {
       reportType: 'DAILY_SAFETY_LOG',
       fileUrl: 'https://cloudinary.com/test.pdf',
       status,
+      extractionStrategy: 'NONE',
       uploadedAt: new Date(),
     })
 
@@ -92,6 +93,16 @@ describe('ReportEntity', () => {
         fileUrl: 'https://example.com/file.pdf',
       })
       expect(report.uploadedAt.getTime()).toBeGreaterThanOrEqual(before.getTime())
+    })
+
+    it('defaults extractionStrategy to NONE', () => {
+      const report = ReportEntity.create({
+        id: 'new-id',
+        projectId: 'proj-1',
+        reportType: 'SITE_PHOTO',
+        fileUrl: 'https://example.com/file.pdf',
+      })
+      expect(report.extractionStrategy).toBe('NONE')
     })
   })
 })

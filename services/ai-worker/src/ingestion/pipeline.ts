@@ -20,25 +20,25 @@ export async function extractDocumentContentWithProvider(
   const sourceKind = detectSourceKind(fileUrl)
 
   if (sourceKind === 'text') {
-    return {
-      content: fs.readFileSync(tempFilePath, 'utf-8').trim(),
-      sourceKind,
-      strategy: 'native-text',
-      ocrPerformed: false,
-    }
+      return {
+        content: fs.readFileSync(tempFilePath, 'utf-8').trim(),
+        sourceKind,
+        strategy: 'NATIVE_TEXT',
+        ocrPerformed: false,
+      }
   }
 
   if (sourceKind === 'pdf') {
     const pdfData = await pdfParse(fs.readFileSync(tempFilePath))
     const text = pdfData.text?.trim() || ''
 
-    if (text.length >= PDF_TEXT_MIN_LENGTH) {
-      return {
-        content: text,
-        sourceKind,
-        strategy: 'native-text',
-        ocrPerformed: false,
-      }
+      if (text.length >= PDF_TEXT_MIN_LENGTH) {
+        return {
+          content: text,
+          sourceKind,
+          strategy: 'NATIVE_TEXT',
+          ocrPerformed: false,
+        }
     }
 
     logger.warn('PDF text extraction was sparse, attempting OCR fallback', { fileUrl, textLength: text.length })
@@ -54,7 +54,7 @@ export async function extractDocumentContentWithProvider(
   return {
     content: '',
     sourceKind,
-    strategy: 'none',
+    strategy: 'NONE',
     ocrPerformed: false,
   }
 }
@@ -72,15 +72,15 @@ async function performOcr(
     return {
       content: '',
       sourceKind,
-      strategy: 'none',
-      ocrPerformed: ocrProvider.name !== 'disabled',
+      strategy: 'NONE',
+      ocrPerformed: true,
     }
   }
 
   return {
     content: result.text.trim(),
     sourceKind,
-    strategy: 'ocr',
+    strategy: 'OCR',
     ocrPerformed: true,
     ocrProvider: result.provider,
     ocrConfidence: result.confidence,

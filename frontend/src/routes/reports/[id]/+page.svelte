@@ -63,6 +63,16 @@
             Automated analysis found <strong>{criticalCount}</strong> critical and <strong>{majorCount}</strong> major issues.
           </p>
           <p class="muted">
+            Extraction path:
+            <strong>{report.extractionStrategy || 'NONE'}</strong>
+            {#if report.ocrProvider}
+              via <strong>{report.ocrProvider}</strong>
+            {/if}
+            {#if report.ocrConfidence}
+              at <strong>{Math.round(report.ocrConfidence * 100)}%</strong> confidence
+            {/if}
+          </p>
+          <p class="muted">
             {actionableCount > 0
               ? 'Immediate attention is still required on open findings before the next site review.'
               : 'All findings are currently marked resolved.'}

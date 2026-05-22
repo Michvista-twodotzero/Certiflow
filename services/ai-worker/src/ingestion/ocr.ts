@@ -1,18 +1,16 @@
 import { createLogger } from '@certiflow/shared'
-import { MockOcrProvider } from './providers/MockOcr.provider'
-import { NoopOcrProvider } from './providers/NoopOcr.provider'
+import { GoogleVisionOcrProvider } from './providers/GoogleVisionOcr.provider'
 import type { OcrProvider } from './types'
 
 const logger = createLogger('ai-worker:ocr')
 
 export function createOcrProvider(): OcrProvider {
-  const provider = (process.env.OCR_PROVIDER || 'none').toLowerCase()
+  const provider = (process.env.OCR_PROVIDER || 'google-vision').toLowerCase()
 
-  if (provider === 'mock') {
-    logger.info('Using mock OCR provider')
-    return new MockOcrProvider()
+  if (provider === 'google-vision') {
+    logger.info('Using Google Vision OCR provider')
+    return new GoogleVisionOcrProvider()
   }
 
-  logger.info('OCR provider not configured, OCR paths will be skipped', { provider })
-  return new NoopOcrProvider()
+  throw new Error(`Unsupported OCR provider: ${provider}`)
 }

@@ -54,6 +54,11 @@
             </div>
             <h2 style="margin-bottom: 0.35rem;">{resolveProjectName(report.projectId, projects)}</h2>
             <div class="muted">{report.reportType.replaceAll('_', ' ')}</div>
+            {#if report.extractionStrategy === 'OCR'}
+              <p class="muted" style="margin-top: 0.75rem;">
+                OCR processed{report.ocrProvider ? ` via ${report.ocrProvider}` : ''}{report.ocrConfidence ? ` (${Math.round(report.ocrConfidence * 100)}% confidence)` : ''}.
+              </p>
+            {/if}
             <p class="muted" style="margin-top: 1rem;">
               {violationsByReport[report.id]?.length || 0} violation(s) linked to this report.
             </p>

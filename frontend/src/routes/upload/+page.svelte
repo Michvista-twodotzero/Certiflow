@@ -135,9 +135,9 @@
             <p class="muted">Ready to upload.</p>
           {:else}
             <p>Drop files here or click to upload.</p>
-            <p class="muted">Supports PDF, JPG, PNG, CSV. Max 50 MB.</p>
+            <p class="muted">Supports PDF, JPG, PNG, TIFF, CSV. Scanned PDFs and images are routed through OCR. Max 50 MB.</p>
           {/if}
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png,.csv" on:change={handleFileChange} style="margin-top: 1rem;" />
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,.csv" on:change={handleFileChange} style="margin-top: 1rem;" />
         </div>
 
         <div class="field">
