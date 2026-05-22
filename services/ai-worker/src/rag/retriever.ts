@@ -1,12 +1,14 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { GoogleGenAI, createPartFromUri, createUserContent } from '@google/genai'
+import pdfParse from 'pdf-parse'
 import { createLogger } from '@certiflow/shared'
 
 const logger = createLogger('ai-worker:gemini-files')
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+const OSHA_FILE_SEARCH_DISPLAY_NAME = process.env.GEMINI_FILE_SEARCH_DISPLAY_NAME || 'certiflow-osha-reference'
 const FILE_POLL_INTERVAL_MS = 2000
 const FILE_POLL_TIMEOUT_MS = 60_000
+const RETRY_DELAYS_MS = [1000, 3000, 6000]
 
 interface HostedFile {
   name: string
@@ -15,7 +17,12 @@ interface HostedFile {
   state?: string | { name?: string } | null
 }
 
-let cachedOshaFile: HostedFile | null = null
+interface FileSearchStore {
+  name: string
+  displayName?: string
+}
+
+let cachedOshaStore: FileSearchStore | null = null
 
 export function createGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY
@@ -26,17 +33,17 @@ export function createGeminiClient() {
   return new GoogleGenAI({ apiKey })
 }
 
-export async function ensureHostedOshaFile(ai: GoogleGenAI): Promise<HostedFile> {
-  if (cachedOshaFile?.name) {
-    try {
-      const existing = await ai.files.get({ name: cachedOshaFile.name })
-      const active = await waitForFileActive(ai, normalizeHostedFile(existing))
-      cachedOshaFile = active
-      return active
-    } catch (error) {
-      logger.warn('Cached OSHA Gemini file was unavailable, re-uploading', { error })
-      cachedOshaFile = null
-    }
+export async function ensureOshaFileSearchStore(ai: GoogleGenAI): Promise<FileSearchStore> {
+  const configuredStore = process.env.GEMINI_FILE_SEARCH_STORE_NAME?.trim()
+
+  if (configuredStore) {
+    const store = await ai.fileSearchStores.get({ name: configuredStore })
+    cachedOshaStore = { name: store.name!, displayName: store.displayName }
+    return cachedOshaStore
+  }
+
+  if (cachedOshaStore?.name) {
+    return cachedOshaStore
   }
 
   const oshaPdfPath = resolveOshaPdfPath()
@@ -44,36 +51,57 @@ export async function ensureHostedOshaFile(ai: GoogleGenAI): Promise<HostedFile>
     throw new Error('OSHA reference PDF not found at services/ai-worker/src/rag/documents/osha-1926.pdf')
   }
 
-  const uploaded = await ai.files.upload({
-    file: oshaPdfPath,
+  const store = await retryGeminiCall(() => ai.fileSearchStores.create({
     config: {
-      mimeType: 'application/pdf',
-      displayName: 'OSHA 29 CFR 1926',
+      displayName: OSHA_FILE_SEARCH_DISPLAY_NAME,
+      embeddingModel: 'models/gemini-embedding-001',
     },
-  })
+  }))
 
-  cachedOshaFile = await waitForFileActive(ai, normalizeHostedFile(uploaded))
-  logger.info('Uploaded OSHA reference file to Gemini', { name: cachedOshaFile.name })
-  return cachedOshaFile
+  if (!store.name) {
+    throw new Error('Gemini did not return a file search store name for OSHA indexing')
+  }
+
+  const storeName = store.name
+  const oshaSource = await materializeOshaSourceFile(oshaPdfPath)
+
+  const operation = await retryGeminiCall(() => ai.fileSearchStores.uploadToFileSearchStore({
+    fileSearchStoreName: storeName,
+    file: oshaSource.filePath,
+    config: {
+      mimeType: oshaSource.mimeType,
+      displayName: oshaSource.displayName,
+    },
+  }))
+
+  await waitForOperation(ai, operation)
+
+  cachedOshaStore = {
+    name: store.name,
+    displayName: store.displayName,
+  }
+  logger.info('Created OSHA Gemini File Search store', { name: cachedOshaStore.name })
+  return cachedOshaStore
 }
 
 export async function uploadReportFile(ai: GoogleGenAI, tempFilePath: string, fileUrl: string): Promise<HostedFile> {
   const mimeType = inferMimeType(tempFilePath, fileUrl)
-  const uploaded = await ai.files.upload({
+  const uploaded = await retryGeminiCall(() => ai.files.upload({
     file: tempFilePath,
     config: {
       mimeType,
       displayName: `Site report ${path.basename(tempFilePath)}`,
     },
-  })
+  }))
 
   return waitForFileActive(ai, normalizeHostedFile(uploaded))
 }
 
-export function createAuditContents(reportFile: HostedFile, oshaFile: HostedFile, prompt: string) {
+export function createAuditContents(reportFiles: HostedFile[], prompt: string) {
   return createUserContent([
-    createPartFromUri(reportFile.uri, reportFile.mimeType || 'application/octet-stream'),
-    createPartFromUri(oshaFile.uri, oshaFile.mimeType || 'application/pdf'),
+    ...reportFiles.map((reportFile) =>
+      createPartFromUri(reportFile.uri, reportFile.mimeType || 'application/octet-stream'),
+    ),
     prompt,
   ])
 }
@@ -122,6 +150,28 @@ async function waitForFileActive(ai: GoogleGenAI, file: HostedFile): Promise<Hos
 
     await sleep(FILE_POLL_INTERVAL_MS)
     current = normalizeHostedFile(await ai.files.get({ name: current.name }))
+  }
+}
+
+async function waitForOperation(ai: GoogleGenAI, operation: any) {
+  if (!operation.name) {
+    throw new Error('Gemini File Search upload did not return an operation name')
+  }
+
+  let current = operation
+  const startedAt = Date.now()
+
+  while (!current.done) {
+    if (Date.now() - startedAt > FILE_POLL_TIMEOUT_MS) {
+      throw new Error(`Timed out waiting for Gemini File Search operation: ${operation.name}`)
+    }
+
+    await sleep(FILE_POLL_INTERVAL_MS)
+    current = await ai.operations.get({ operation: current })
+  }
+
+  if (current.error) {
+    throw new Error(`Gemini File Search operation failed: ${JSON.stringify(current.error)}`)
   }
 }
 
@@ -174,4 +224,55 @@ function inferMimeType(tempFilePath: string, fileUrl: string) {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function materializeOshaSourceFile(oshaPdfPath: string) {
+  const tempDir = path.join(process.cwd(), 'tmp')
+  fs.mkdirSync(tempDir, { recursive: true })
+
+  try {
+    const pdfData = await pdfParse(fs.readFileSync(oshaPdfPath))
+    const extractedText = pdfData.text?.trim()
+    if (extractedText) {
+      const textPath = path.join(tempDir, 'osha-1926-index.txt')
+      fs.writeFileSync(textPath, extractedText, 'utf-8')
+      return {
+        filePath: textPath,
+        mimeType: 'text/plain',
+        displayName: 'OSHA 29 CFR 1926 Extracted Text',
+      }
+    }
+  } catch (error) {
+    logger.warn('Failed to extract OSHA text for File Search, falling back to PDF upload', { error })
+  }
+
+  return {
+    filePath: oshaPdfPath,
+    mimeType: 'application/pdf',
+    displayName: 'OSHA 29 CFR 1926',
+  }
+}
+
+async function retryGeminiCall<T>(operation: () => Promise<T>) {
+  let lastError: unknown
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error
+      if (!isRetryableGeminiError(error) || attempt === RETRY_DELAYS_MS.length) {
+        throw error
+      }
+
+      await sleep(RETRY_DELAYS_MS[attempt])
+    }
+  }
+
+  throw lastError
+}
+
+function isRetryableGeminiError(error: unknown) {
+  const status = typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : undefined
+  return status === 429 || status === 500 || status === 503
 }

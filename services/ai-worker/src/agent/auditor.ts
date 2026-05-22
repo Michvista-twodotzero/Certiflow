@@ -3,7 +3,8 @@ import * as http from 'http'
 import * as https from 'https'
 import * as path from 'path'
 import { AuditResult, createLogger } from '@certiflow/shared'
-import { createAuditContents, createGeminiClient, deleteHostedFile, ensureHostedOshaFile, uploadReportFile } from '../rag/retriever'
+import { createAuditContents, createGeminiClient, deleteHostedFile, ensureOshaFileSearchStore, uploadReportFile } from '../rag/retriever'
+import { extractDocumentContent } from '../ingestion/pipeline'
 
 const logger = createLogger('ai-worker:auditor')
 
@@ -35,49 +36,76 @@ export async function auditReport(fileUrl: string, projectName: string): Promise
   logger.info('Starting AI audit', { projectName, fileUrl })
 
   let tempFilePath: string | null = null
-  let hostedReportFile: Awaited<ReturnType<typeof uploadReportFile>> | null = null
+  let hostedReportFiles: Array<Awaited<ReturnType<typeof uploadReportFile>>> = []
+  let transcriptPath: string | null = null
 
   try {
     tempFilePath = await downloadFile(fileUrl)
-    const hostedOshaFile = await ensureHostedOshaFile(ai)
-    hostedReportFile = await uploadReportFile(ai, tempFilePath, fileUrl)
+    const extractedDocument = await extractDocumentContent(tempFilePath, fileUrl)
+    const oshaStore = await ensureOshaFileSearchStore(ai)
+    hostedReportFiles.push(await uploadReportFile(ai, tempFilePath, fileUrl))
 
-    logger.info('Gemini files ready for audit', {
-      reportFileName: hostedReportFile.name,
-      oshaFileName: hostedOshaFile.name,
+    if (extractedDocument.content.trim()) {
+      transcriptPath = await writeTranscriptFile(tempFilePath, extractedDocument.content)
+      hostedReportFiles.push(await uploadReportFile(ai, transcriptPath, `${fileUrl}.txt`))
+    }
+
+    logger.info('Gemini file inputs ready for audit', {
+      reportFileCount: hostedReportFiles.length,
+      oshaStoreName: oshaStore.name,
+      extractionStrategy: extractedDocument.strategy,
+      sourceKind: extractedDocument.sourceKind,
+      ocrPerformed: extractedDocument.ocrPerformed,
+      ocrProvider: extractedDocument.ocrProvider,
+      ocrConfidence: extractedDocument.ocrConfidence,
     })
 
     const prompt = [
       SYSTEM_PROMPT,
       `Project: ${projectName}`,
       'Use the uploaded site report file as the primary evidence.',
-      'Use the uploaded OSHA 29 CFR 1926 file as the compliance source of truth.',
+      'If a plain-text transcript is attached, treat it as OCR or extracted support for the uploaded report.',
+      'Use the File Search tool over OSHA 29 CFR 1926 as the compliance source of truth.',
       'Return only the JSON response.',
     ].join('\n\n')
 
-    const result = await ai.models.generateContent({
+    const result = await retryGenerateContent(() => ai.models.generateContent({
       model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-      contents: createAuditContents(hostedReportFile, hostedOshaFile, prompt),
-    })
+      contents: createAuditContents(hostedReportFiles, prompt),
+      config: {
+        tools: [
+          {
+            fileSearch: {
+              fileSearchStoreNames: [oshaStore.name],
+              topK: 8,
+            },
+          },
+        ],
+      },
+    }))
     const rawResponse = result.text ?? ''
 
     logger.info('Gemini analysis complete, parsing response')
-    return parseGeminiResponse(rawResponse, fileUrl)
+    return parseGeminiResponse(rawResponse, extractedDocument)
   } catch (error) {
     logger.error('Audit failed', { error })
     throw error
   } finally {
-    await deleteHostedFile(ai, hostedReportFile)
+    for (const hostedReportFile of hostedReportFiles) {
+      await deleteHostedFile(ai, hostedReportFile)
+    }
 
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       fs.unlinkSync(tempFilePath)
     }
+
+    if (transcriptPath && fs.existsSync(transcriptPath)) {
+      fs.unlinkSync(transcriptPath)
+    }
   }
 }
 
-function parseGeminiResponse(raw: string, fileUrl: string): AuditResult {
-  const sourceKind = detectSourceKind(fileUrl)
-
+function parseGeminiResponse(raw: string, extractedDocument: Awaited<ReturnType<typeof extractDocumentContent>>): AuditResult {
   try {
     const cleaned = raw.replace(/```json|```/g, '').trim()
     const parsed = JSON.parse(cleaned)
@@ -87,10 +115,11 @@ function parseGeminiResponse(raw: string, fileUrl: string): AuditResult {
       summary: parsed.summary || 'Analysis complete.',
       actionableCount: parsed.actionableCount || parsed.violations?.length || 0,
       extraction: {
-        strategy: 'GEMINI_FILE',
-        sourceKind,
-        ocrPerformed: sourceKind === 'image',
-        ocrProvider: 'gemini-files',
+        strategy: extractedDocument.strategy === 'NONE' ? 'GEMINI_FILE' : extractedDocument.strategy,
+        sourceKind: extractedDocument.sourceKind,
+        ocrPerformed: extractedDocument.ocrPerformed,
+        ocrProvider: extractedDocument.ocrProvider,
+        ocrConfidence: extractedDocument.ocrConfidence,
       },
     }
   } catch (error) {
@@ -100,22 +129,41 @@ function parseGeminiResponse(raw: string, fileUrl: string): AuditResult {
       summary: 'AI analysis could not be parsed. Manual review required.',
       actionableCount: 0,
       extraction: {
-        strategy: 'GEMINI_FILE',
-        sourceKind,
-        ocrPerformed: sourceKind === 'image',
-        ocrProvider: 'gemini-files',
+        strategy: extractedDocument.strategy === 'NONE' ? 'GEMINI_FILE' : extractedDocument.strategy,
+        sourceKind: extractedDocument.sourceKind,
+        ocrPerformed: extractedDocument.ocrPerformed,
+        ocrProvider: extractedDocument.ocrProvider,
+        ocrConfidence: extractedDocument.ocrConfidence,
       },
     }
   }
 }
 
-function detectSourceKind(fileUrl: string): AuditResult['extraction']['sourceKind'] {
-  const extension = path.extname(fileUrl).toLowerCase()
+async function writeTranscriptFile(sourcePath: string, content: string) {
+  const transcriptPath = `${sourcePath}.extracted.txt`
+  fs.writeFileSync(transcriptPath, content, 'utf-8')
+  return transcriptPath
+}
 
-  if (extension === '.pdf') return 'pdf'
-  if (['.txt', '.csv', '.md', '.json'].includes(extension)) return 'text'
-  if (['.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff', '.bmp', '.gif'].includes(extension)) return 'image'
-  return 'unknown'
+async function retryGenerateContent<T>(operation: () => Promise<T>) {
+  const delays = [1000, 3000, 6000]
+  let lastError: unknown
+
+  for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error
+      const status = typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : undefined
+      if (![429, 500, 503].includes(status || 0) || attempt === delays.length) {
+        throw error
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+    }
+  }
+
+  throw lastError
 }
 
 function downloadFile(url: string): Promise<string> {

@@ -28,6 +28,7 @@ const VISION_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
 export class GoogleVisionOcrProvider implements OcrProvider {
   readonly name = 'google-vision'
   private readonly auth = createGoogleAuth()
+  private readonly quotaProjectId = resolveQuotaProjectId()
 
   async extractText(input: { tempFilePath: string; fileUrl: string; sourceKind: SourceKind }): Promise<OcrResult | null> {
     if (input.sourceKind === 'image') {
@@ -107,12 +108,14 @@ export class GoogleVisionOcrProvider implements OcrProvider {
       headers: {
         ...headers,
         'Content-Type': 'application/json',
+        ...(this.quotaProjectId ? { 'x-goog-user-project': this.quotaProjectId } : {}),
       },
       body: JSON.stringify(body),
     })
 
     if (!response.ok) {
-      throw new Error(`Google Vision OCR request failed with ${response.status}`)
+      const details = await response.text()
+      throw new Error(`Google Vision OCR request failed with ${response.status}: ${details}`)
     }
 
     return response.json() as Promise<T>
@@ -129,13 +132,18 @@ function averageConfidence(pages?: Array<{ confidence?: number }>): number | und
 }
 
 function createGoogleAuth() {
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim()
+  if (credentialsPath) {
+    return new GoogleAuth({
+      scopes: [VISION_SCOPE],
+      keyFilename: credentialsPath,
+    })
+  }
+
   const inlineCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON?.trim()
 
   if (inlineCredentials) {
-    const credentials = JSON.parse(inlineCredentials.replace(/\\n/g, '\n')) as {
-      client_email?: string
-      private_key?: string
-    }
+    const credentials = parseInlineCredentials(inlineCredentials)
 
     return new GoogleAuth({
       scopes: [VISION_SCOPE],
@@ -144,4 +152,36 @@ function createGoogleAuth() {
   }
 
   return new GoogleAuth({ scopes: [VISION_SCOPE] })
+}
+
+function parseInlineCredentials(value: string): { client_email?: string; private_key?: string } {
+  try {
+    return JSON.parse(value)
+  } catch {
+    return JSON.parse(value.replace(/\\n/g, '\n'))
+  }
+}
+
+function resolveQuotaProjectId() {
+  if (process.env.GOOGLE_CLOUD_QUOTA_PROJECT?.trim()) {
+    return process.env.GOOGLE_CLOUD_QUOTA_PROJECT.trim()
+  }
+
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim()
+  if (credentialsPath && fs.existsSync(credentialsPath)) {
+    const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8')) as { project_id?: string }
+    return credentials.project_id
+  }
+
+  const inlineCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON?.trim()
+  if (inlineCredentials) {
+    try {
+      const credentials = parseInlineCredentials(inlineCredentials) as { project_id?: string }
+      return credentials.project_id
+    } catch {
+      return undefined
+    }
+  }
+
+  return process.env.GOOGLE_CLOUD_PROJECT?.trim()
 }
