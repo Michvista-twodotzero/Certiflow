@@ -2,7 +2,13 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
+    "moduleResolution": "node",
     "lib": ["ES2020"],
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@certiflow/shared": ["../../shared/dist"]
+    },
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,

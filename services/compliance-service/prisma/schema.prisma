@@ -12,6 +12,8 @@ model User {
   email     String   @unique
   password  String
   name      String
+  emailNotifications Boolean @default(true)
+  criticalViolationAlerts Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -39,8 +41,11 @@ model Report {
   projectId  String
   reportType ReportType
   fileUrl    String
+  originalFileName String?
+  mimeType String?
   status     ReportStatus @default(PENDING)
   notes      String?
+  summary    String?
   extractionStrategy ExtractionStrategy @default(NONE)
   ocrProvider String?
   ocrConfidence Float?

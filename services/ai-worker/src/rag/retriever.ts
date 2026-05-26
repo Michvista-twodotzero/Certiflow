@@ -84,13 +84,18 @@ export async function ensureOshaFileSearchStore(ai: GoogleGenAI): Promise<FileSe
   return cachedOshaStore
 }
 
-export async function uploadReportFile(ai: GoogleGenAI, tempFilePath: string, fileUrl: string): Promise<HostedFile> {
-  const mimeType = inferMimeType(tempFilePath, fileUrl)
+export async function uploadReportFile(
+  ai: GoogleGenAI,
+  tempFilePath: string,
+  fileUrl: string,
+  fileMeta?: { originalFileName?: string; mimeType?: string },
+): Promise<HostedFile> {
+  const mimeType = inferMimeType(tempFilePath, fileUrl, fileMeta)
   const uploaded = await retryGeminiCall(() => ai.files.upload({
     file: tempFilePath,
     config: {
       mimeType,
-      displayName: `Site report ${path.basename(tempFilePath)}`,
+      displayName: `Site report ${fileMeta?.originalFileName || path.basename(tempFilePath)}`,
     },
   }))
 
@@ -205,8 +210,16 @@ function normalizeHostedFile(file: {
   }
 }
 
-function inferMimeType(tempFilePath: string, fileUrl: string) {
-  const extension = path.extname(fileUrl || tempFilePath).toLowerCase()
+function inferMimeType(
+  tempFilePath: string,
+  fileUrl: string,
+  fileMeta?: { originalFileName?: string; mimeType?: string },
+) {
+  if (fileMeta?.mimeType?.trim()) {
+    return fileMeta.mimeType
+  }
+
+  const extension = path.extname(fileMeta?.originalFileName || fileUrl || tempFilePath).toLowerCase()
 
   if (extension === '.pdf') return 'application/pdf'
   if (extension === '.txt') return 'text/plain'

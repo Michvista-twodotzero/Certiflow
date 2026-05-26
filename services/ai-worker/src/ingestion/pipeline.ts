@@ -8,16 +8,21 @@ import type { ExtractedDocument, OcrProvider, SourceKind } from './types'
 const logger = createLogger('ai-worker:ingestion-pipeline')
 const PDF_TEXT_MIN_LENGTH = 40
 
-export async function extractDocumentContent(tempFilePath: string, fileUrl: string): Promise<ExtractedDocument> {
-  return extractDocumentContentWithProvider(tempFilePath, fileUrl, createOcrProvider())
+export async function extractDocumentContent(
+  tempFilePath: string,
+  fileUrl: string,
+  fileMeta?: { originalFileName?: string; mimeType?: string },
+): Promise<ExtractedDocument> {
+  return extractDocumentContentWithProvider(tempFilePath, fileUrl, createOcrProvider(), fileMeta)
 }
 
 export async function extractDocumentContentWithProvider(
   tempFilePath: string,
   fileUrl: string,
   ocrProvider: OcrProvider,
+  fileMeta?: { originalFileName?: string; mimeType?: string },
 ): Promise<ExtractedDocument> {
-  const sourceKind = detectSourceKind(fileUrl)
+  const sourceKind = detectSourceKind(fileUrl, fileMeta)
 
   if (sourceKind === 'text') {
       return {
@@ -42,12 +47,12 @@ export async function extractDocumentContentWithProvider(
     }
 
     logger.warn('PDF text extraction was sparse, attempting OCR fallback', { fileUrl, textLength: text.length })
-    return performOcr(tempFilePath, fileUrl, sourceKind, ocrProvider)
+    return performOcr(tempFilePath, fileUrl, sourceKind, ocrProvider, fileMeta)
   }
 
   if (sourceKind === 'image') {
     logger.info('Image input detected, attempting OCR', { fileUrl })
-    return performOcr(tempFilePath, fileUrl, sourceKind, ocrProvider)
+    return performOcr(tempFilePath, fileUrl, sourceKind, ocrProvider, fileMeta)
   }
 
   logger.warn('No extraction strategy configured for file type', { fileUrl })
@@ -64,8 +69,32 @@ async function performOcr(
   fileUrl: string,
   sourceKind: SourceKind,
   ocrProvider: OcrProvider,
+  fileMeta?: { originalFileName?: string; mimeType?: string },
 ): Promise<ExtractedDocument> {
-  const result = await ocrProvider.extractText({ tempFilePath, fileUrl, sourceKind })
+  let result
+
+  try {
+    result = await ocrProvider.extractText({
+      tempFilePath,
+      fileUrl,
+      sourceKind,
+      originalFileName: fileMeta?.originalFileName,
+      mimeType: fileMeta?.mimeType,
+    })
+  } catch (error) {
+    logger.warn('OCR failed, falling back to direct Gemini file analysis', {
+      fileUrl,
+      provider: ocrProvider.name,
+      error,
+    })
+
+    return {
+      content: '',
+      sourceKind,
+      strategy: 'NONE',
+      ocrPerformed: false,
+    }
+  }
 
   if (!result?.text?.trim()) {
     logger.warn('OCR did not return text', { fileUrl, provider: ocrProvider.name })
@@ -87,8 +116,13 @@ async function performOcr(
   }
 }
 
-function detectSourceKind(fileUrl: string): SourceKind {
-  const extension = path.extname(fileUrl).toLowerCase()
+function detectSourceKind(fileUrl: string, fileMeta?: { originalFileName?: string; mimeType?: string }): SourceKind {
+  const mimeType = fileMeta?.mimeType?.toLowerCase()
+  if (mimeType?.startsWith('image/')) return 'image'
+  if (mimeType === 'application/pdf') return 'pdf'
+  if (mimeType?.startsWith('text/') || mimeType === 'application/json') return 'text'
+
+  const extension = path.extname(fileMeta?.originalFileName || fileUrl).toLowerCase()
 
   if (extension === '.pdf') return 'pdf'
   if (['.txt', '.csv', '.md', '.json'].includes(extension)) return 'text'

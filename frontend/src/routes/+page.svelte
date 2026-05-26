@@ -4,6 +4,7 @@
   import { formatDate, statusTone } from '$lib/format'
   import { fetchProjects, resolveProjectName } from '$lib/project-registry'
   import type { Project, Report, Violation } from '@certiflow/shared'
+  import Icon from '$lib/components/Icon.svelte'
 
   type ReportSummary = {
     report: Report
@@ -49,9 +50,13 @@
     const major = violations.filter((violation) => violation.severity === 'MAJOR').length
     const minor = violations.filter((violation) => violation.severity === 'MINOR').length
 
-    return [critical ? `${critical} Critical` : '', major ? `${major} Major` : '', minor ? `${minor} Minor` : '']
-      .filter(Boolean)
-      .join(', ')
+    // Match exact style of text: "1 Critical, 3 Minor" or "--" or "0"
+    const parts = []
+    if (critical) parts.push(`${critical} Critical`)
+    if (major) parts.push(`${major} Major`)
+    if (minor) parts.push(`${minor} Minor`)
+
+    return parts.join(', ')
   }
 </script>
 
@@ -59,7 +64,7 @@
   <header class="page-header">
     <div>
       <h1 class="page-title">Dashboard</h1>
-      <p class="page-subtitle">System overview and recent activity.</p>
+      <p class="page-subtitle">System Overview & Recent Activity</p>
     </div>
   </header>
 
@@ -71,27 +76,50 @@
     {:else}
       <div class="grid-4">
         <article class="stat-card">
-          <div class="eyebrow">Total Projects</div>
-          <div class="big-number">{totalProjects}</div>
+          <div class="stat-icon-wrapper">
+            <Icon name="building" size={20} />
+          </div>
+          <div class="stat-content">
+            <div class="eyebrow">Total Projects</div>
+            <div class="big-number">{totalProjects}</div>
+          </div>
         </article>
+
         <article class="stat-card">
-          <div class="eyebrow">Open Reports</div>
-          <div class="big-number">{openReports}</div>
+          <div class="stat-icon-wrapper">
+            <Icon name="file" size={20} />
+          </div>
+          <div class="stat-content">
+            <div class="eyebrow">Open Reports</div>
+            <div class="big-number">{openReports}</div>
+          </div>
         </article>
+
         <article class="stat-card accent">
-          <div class="eyebrow">Critical Violations</div>
-          <div class="big-number">{criticalViolations}</div>
+          <div class="stat-icon-wrapper">
+            <Icon name="violations" size={20} style="color: var(--danger);" />
+          </div>
+          <div class="stat-content">
+            <div class="eyebrow">Critical Violations</div>
+            <div class="big-number">{criticalViolations}</div>
+          </div>
         </article>
+
         <article class="stat-card">
-          <div class="eyebrow">Resolved This Week</div>
-          <div class="big-number">{resolvedThisWeek}</div>
+          <div class="stat-icon-wrapper">
+            <Icon name="check" size={20} style="color: var(--accent);" />
+          </div>
+          <div class="stat-content">
+            <div class="eyebrow">Resolved This Week</div>
+            <div class="big-number">{resolvedThisWeek}</div>
+          </div>
         </article>
       </div>
 
       <section class="panel">
-        <div class="page-header" style="padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div class="page-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
           <div>
-            <h2 style="margin: 0;">Recent Reports</h2>
+            <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.4rem;">Recent Reports</h2>
           </div>
           <a class="ghost-button" href="/reports">View all reports</a>
         </div>
@@ -113,11 +141,23 @@
               <tbody>
                 {#each recentReports as { report, violations }}
                   <tr>
-                    <td>{resolveProjectName(report.projectId, projects)}</td>
-                    <td>{formatDate(report.uploadedAt)}</td>
-                    <td><span class={`badge ${statusTone(report.status)}`}>{report.status}</span></td>
-                    <td>{violationPreview(violations)}</td>
-                    <td><a class="ghost-button" href={`/reports/${report.id}`}>View</a></td>
+                    <td style="font-weight: 600; color: #fff;">{resolveProjectName(report.projectId, projects)}</td>
+                    <td style="color: var(--text-muted);">{formatDate(report.uploadedAt)}</td>
+                    <td>
+                      <span class={`badge ${statusTone(report.status)}`}>{report.status}</span>
+                    </td>
+                    <td>
+                      {#if violations.length > 0}
+                        <span style="color: {violations.some(v => v.severity === 'CRITICAL' && !v.isResolved) ? 'var(--danger)' : 'var(--accent)'}; font-weight: 500;">
+                          {violationPreview(violations)}
+                        </span>
+                      {:else}
+                        <span style="color: var(--accent); font-weight: 500;">0</span>
+                      {/if}
+                    </td>
+                    <td>
+                      <a class="ghost-button" href={`/reports/${report.id}`}>View</a>
+                    </td>
                   </tr>
                 {/each}
               </tbody>

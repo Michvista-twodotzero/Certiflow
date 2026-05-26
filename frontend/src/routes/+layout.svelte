@@ -5,6 +5,7 @@
   import { onMount } from 'svelte'
   import AppShell from '$lib/components/AppShell.svelte'
   import { authSession, getStoredSession } from '$lib/auth'
+  import { userSettings } from '$lib/settings'
   import '$lib/styles.css'
 
   $: isAuthPage = $page.url.pathname.startsWith('/auth')
@@ -13,6 +14,7 @@
     if (!browser) return
 
     authSession.set(getStoredSession())
+    userSettings.load()
 
     if (!$page.url.pathname.startsWith('/auth') && !getStoredSession()) {
       goto('/auth')

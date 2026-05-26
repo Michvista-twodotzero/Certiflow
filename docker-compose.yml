@@ -128,6 +128,15 @@ services:
       OCR_PROVIDER: ${OCR_PROVIDER:-google-vision}
       GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
       GOOGLE_APPLICATION_CREDENTIALS_JSON: ${GOOGLE_APPLICATION_CREDENTIALS_JSON}
+      GOOGLE_CLOUD_QUOTA_PROJECT: ${GOOGLE_CLOUD_QUOTA_PROJECT}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      SMTP_URL: ${SMTP_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      MAIL_FROM: ${MAIL_FROM}
     depends_on:
       postgres-compliance:
         condition: service_healthy
@@ -166,6 +175,9 @@ services:
         - action: sync
           path: ./frontend/src
           target: /app/frontend/src
+        - action: sync
+          path: ./frontend/static
+          target: /app/frontend/static
         - action: rebuild
           path: ./frontend/package.json
         - action: rebuild

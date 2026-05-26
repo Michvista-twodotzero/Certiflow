@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 import authRoutes from './infrastructure/http/auth.routes'
 import projectRoutes from './infrastructure/http/project.routes'
 import routes from './infrastructure/http/routes'
+import settingsRoutes from './infrastructure/http/settings.routes'
 import { createLogger, errorResponse } from '@certiflow/shared'
 import { prisma } from './infrastructure/prisma/client'
 
@@ -31,6 +32,7 @@ app.get('/health', async (_req, res) => {
 
 app.use('/api/auth', authRoutes)
 app.use('/api/projects', projectRoutes)
+app.use('/api/settings', settingsRoutes)
 app.use('/api/reports', routes)
 
 app.use((err: any, _req: any, res: any, _next: any) => {

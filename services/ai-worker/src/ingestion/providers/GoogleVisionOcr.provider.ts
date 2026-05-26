@@ -16,7 +16,7 @@ export class GoogleVisionOcrProvider implements OcrProvider {
     })
   }
 
-  async extractText(input: { tempFilePath: string; fileUrl: string; sourceKind: SourceKind }): Promise<OcrResult | null> {
+  async extractText(input: { tempFilePath: string; fileUrl: string; sourceKind: SourceKind; originalFileName?: string; mimeType?: string }): Promise<OcrResult | null> {
     if (input.sourceKind === 'image') {
       return this.extractImageText(input.tempFilePath)
     }
@@ -125,6 +125,15 @@ function resolveCredentialInfo() {
     }
   }
 
+  if (credentialsPath) {
+    logger.warn('Ignoring GOOGLE_APPLICATION_CREDENTIALS because the file is not accessible from this runtime', {
+      credentialsPath,
+      cwd: process.cwd(),
+      platform: process.platform,
+      looksLikeWindowsHostPath: isWindowsHostPath(credentialsPath),
+    })
+  }
+
   const inlineCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON?.trim()
   if (inlineCredentials) {
     try {
@@ -166,5 +175,16 @@ function createVisionClient(credentialInfo: ReturnType<typeof resolveCredentialI
     })
   }
 
+  // Prevent google-auth-library from crashing on a host-only path like
+  // C:\... when this service is running inside a Linux container.
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim()
+  if (credentialsPath && !fs.existsSync(credentialsPath)) {
+    delete process.env.GOOGLE_APPLICATION_CREDENTIALS
+  }
+
   return new vision.ImageAnnotatorClient()
+}
+
+function isWindowsHostPath(value: string) {
+  return /^[A-Za-z]:[\\/]/.test(value) || value.includes('\\')
 }

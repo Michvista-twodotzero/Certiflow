@@ -2,7 +2,9 @@
   import { onMount } from 'svelte'
   import { fetchReports, fetchViolations } from '$lib/api'
   import { createProject, deleteProject, fetchProjects, updateProject } from '$lib/project-registry'
+  import { notifications } from '$lib/notifications'
   import type { Project, Report, Violation } from '@certiflow/shared'
+  import Icon from '$lib/components/Icon.svelte'
 
   type ProjectCard = {
     projectId: string
@@ -80,9 +82,11 @@
         location: projectLocation,
       })
 
+      const nameToNotify = projectName
       projectName = ''
       projectLocation = ''
-      successMessage = 'Project created.'
+      successMessage = 'Project created successfully.'
+      notifications.add(`Project "${nameToNotify}" created successfully.`, 'success')
       await loadData()
     } catch (err) {
       error = err instanceof Error ? err.message : 'Unable to create project'
@@ -116,7 +120,7 @@
         location: editLocation,
       })
 
-      successMessage = 'Project updated.'
+      successMessage = 'Project updated successfully.'
       cancelEdit()
       await loadData()
     } catch (err) {
@@ -128,7 +132,7 @@
 
   async function handleDeleteProject(project: ProjectCard) {
     if (project.reportCount > 0) {
-      error = 'Delete the project reports before removing this project.'
+      error = 'Please delete the project reports before removing this project.'
       successMessage = ''
       return
     }
@@ -139,7 +143,8 @@
 
     try {
       await deleteProject(project.projectId)
-      successMessage = 'Project deleted.'
+      successMessage = 'Project deleted successfully.'
+      notifications.add(`Project "${project.name}" has been deleted.`, 'info')
       await loadData()
     } catch (err) {
       error = err instanceof Error ? err.message : 'Unable to delete project'
@@ -159,7 +164,7 @@
 
   <div class="content-stack">
     <article class="panel">
-      <h2 style="margin-top: 0;">Create Project</h2>
+      <h2 style="margin-top: 0; font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: #fff;">Create Project</h2>
       <div class="field-grid">
         <div class="field">
           <label for="project-name">Project Name</label>
@@ -170,9 +175,9 @@
           <input id="project-location" bind:value={projectLocation} placeholder="Manhattan, New York" />
         </div>
       </div>
-      <div class="detail-actions" style="margin-top: 1rem;">
+      <div style="margin-top: 1.25rem;">
         <button class="primary-button" on:click={handleCreateProject} disabled={creating}>
-          {creating ? 'Creating...' : 'Create project'}
+          <span>{creating ? 'Creating...' : 'Create Project'}</span>
         </button>
       </div>
     </article>
@@ -181,56 +186,68 @@
       <div class="alert success">{successMessage}</div>
     {/if}
 
+    {#if error}
+      <div class="alert error">{error}</div>
+    {/if}
+
     {#if loading}
       <div class="panel empty-state">Loading projects...</div>
-    {:else if error}
-      <div class="alert error">{error}</div>
     {:else if projects.length === 0}
       <div class="panel empty-state">No projects yet. Create one above to start using uploads.</div>
     {:else}
-      <div class="grid-3">
-        {#each projects as project}
-          <article class="panel">
-            {#if editingProjectId === project.projectId}
-              <div class="stack">
-                <div class="field">
-                  <label for={`edit-name-${project.projectId}`}>Project Name</label>
-                  <input id={`edit-name-${project.projectId}`} bind:value={editName} />
+      <div class="scroll-container" style="max-height: calc(100vh - 28rem); overflow-y: auto; padding-right: 0.25rem;">
+        <div class="grid-3">
+          {#each projects as project}
+            <article class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+              {#if editingProjectId === project.projectId}
+                <div class="stack">
+                  <div class="field">
+                    <label for={`edit-name-${project.projectId}`}>Project Name</label>
+                    <input id={`edit-name-${project.projectId}`} bind:value={editName} />
+                  </div>
+                  <div class="field">
+                    <label for={`edit-location-${project.projectId}`}>Location</label>
+                    <input id={`edit-location-${project.projectId}`} bind:value={editLocation} />
+                  </div>
+                  <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="primary-button" on:click={() => handleUpdateProject(project.projectId)} disabled={savingProjectId === project.projectId}>
+                      <span>{savingProjectId === project.projectId ? 'Saving...' : 'Save'}</span>
+                    </button>
+                    <button class="ghost-button" on:click={cancelEdit}>Cancel</button>
+                  </div>
                 </div>
-                <div class="field">
-                  <label for={`edit-location-${project.projectId}`}>Location</label>
-                  <input id={`edit-location-${project.projectId}`} bind:value={editLocation} />
+              {:else}
+                <div>
+                  <div class="eyebrow" style="margin-bottom: 0.5rem;">Project</div>
+                  <h2 style="margin: 0 0 0.25rem 0; font-family: 'Outfit', sans-serif; font-size: 1.35rem; color: #fff;">{project.name}</h2>
+                  <p class="muted" style="font-size: 0.9rem; margin: 0 0 1.25rem 0;">{project.location}</p>
+                  
+                  <div class="grid-2" style="margin-bottom: 1.25rem;">
+                    <div class="metric-card" style="background-color: var(--bg); border: 1px solid var(--border); padding: 0.85rem 1rem; border-radius: 0.25rem;">
+                      <div class="eyebrow" style="font-size: 0.65rem;">Reports</div>
+                      <div style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; color: #fff; margin-top: 0.25rem;">{project.reportCount}</div>
+                    </div>
+                    <div class="metric-card" style="background-color: var(--bg); border: 1px solid var(--border); padding: 0.85rem 1rem; border-radius: 0.25rem;">
+                      <div class="eyebrow" style="font-size: 0.65rem;">Findings</div>
+                      <div style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; color: #fff; margin-top: 0.25rem;">{project.openFindings}</div>
+                    </div>
+                  </div>
                 </div>
-                <div class="detail-actions">
-                  <button class="primary-button" on:click={() => handleUpdateProject(project.projectId)} disabled={savingProjectId === project.projectId}>
-                    {savingProjectId === project.projectId ? 'Saving...' : 'Save changes'}
+                
+                <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                  <button class="ghost-button" style="flex: 1;" on:click={() => startEdit(project)}>
+                    <Icon name="edit" size={14} />
+                    <span>Edit</span>
                   </button>
-                  <button class="ghost-button" on:click={cancelEdit}>Cancel</button>
+                  <button class="ghost-button" style="flex: 1; border-color: rgba(255, 69, 58, 0.15); color: #ff6b6b;" on:click={() => handleDeleteProject(project)} disabled={deletingProjectId === project.projectId}>
+                    <Icon name="trash" size={14} />
+                    <span>{deletingProjectId === project.projectId ? '...' : 'Delete'}</span>
+                  </button>
                 </div>
-              </div>
-            {:else}
-              <div class="eyebrow">Project</div>
-              <h2>{project.name}</h2>
-              <p class="muted">{project.location}</p>
-              <div class="grid-2" style="margin-top: 1rem;">
-                <div class="metric-card">
-                  <div class="eyebrow">Reports</div>
-                  <div class="big-number">{project.reportCount}</div>
-                </div>
-                <div class="metric-card">
-                  <div class="eyebrow">Open Findings</div>
-                  <div class="big-number">{project.openFindings}</div>
-                </div>
-              </div>
-              <div class="detail-actions" style="margin-top: 1rem;">
-                <button class="ghost-button" on:click={() => startEdit(project)}>Edit</button>
-                <button class="ghost-button" on:click={() => handleDeleteProject(project)} disabled={deletingProjectId === project.projectId}>
-                  {deletingProjectId === project.projectId ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            {/if}
-          </article>
-        {/each}
+              {/if}
+            </article>
+          {/each}
+        </div>
       </div>
     {/if}
   </div>

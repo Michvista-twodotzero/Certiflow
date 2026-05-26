@@ -1,4 +1,4 @@
-import type { ApiResponse, AuthSession, Report, Violation } from '@certiflow/shared'
+import type { ApiResponse, AuthSession, Report, Violation, UserSettings } from '@certiflow/shared'
 import { API_BASE_URL, getStoredSession } from './auth'
 
 type ReportRecord = Omit<Report, 'uploadedAt'> & { uploadedAt: string | Date }
@@ -97,6 +97,20 @@ export async function submitReport(payload: {
   }
 
   return toReport(record.data)
+}
+
+export function fetchSettings(): Promise<UserSettings> {
+  return request<UserSettings>('/settings')
+}
+
+export function saveSettings(payload: Pick<UserSettings, 'emailNotifications' | 'criticalViolationAlerts'>): Promise<UserSettings> {
+  return request<UserSettings>('/settings', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
 }
 
 export { API_BASE_URL }

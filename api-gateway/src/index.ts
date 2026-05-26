@@ -58,6 +58,12 @@ app.use(
 )
 
 app.use(
+  '/api/settings',
+  authMiddleware,
+  proxyToCompliance('/api/settings')
+)
+
+app.use(
   '/api/violations',
   authMiddleware,
   proxyToCompliance('/api/violations')

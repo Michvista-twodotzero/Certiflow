@@ -10,7 +10,7 @@ export interface OcrResult {
 
 export interface OcrProvider {
   readonly name: string
-  extractText(input: { tempFilePath: string; fileUrl: string; sourceKind: SourceKind }): Promise<OcrResult | null>
+  extractText(input: { tempFilePath: string; fileUrl: string; sourceKind: SourceKind; originalFileName?: string; mimeType?: string }): Promise<OcrResult | null>
 }
 
 export interface ExtractedDocument {

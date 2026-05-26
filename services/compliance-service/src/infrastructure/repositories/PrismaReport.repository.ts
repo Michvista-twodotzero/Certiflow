@@ -8,8 +8,11 @@ type ReportRecord = {
   projectId: string
   reportType: ReportType
   fileUrl: string
+  originalFileName: string | null
+  mimeType: string | null
   status: ReportStatus
   notes: string | null
+  summary: string | null
   extractionStrategy: ExtractionStrategy
   ocrProvider: string | null
   ocrConfidence: number | null
@@ -23,8 +26,11 @@ export class PrismaReportRepository implements IReportRepository {
       projectId: record.projectId,
       reportType: record.reportType,
       fileUrl: record.fileUrl,
+      originalFileName: record.originalFileName ?? undefined,
+      mimeType: record.mimeType ?? undefined,
       status: record.status,
       notes: record.notes ?? undefined,
+      summary: record.summary ?? undefined,
       extractionStrategy: record.extractionStrategy,
       ocrProvider: record.ocrProvider ?? undefined,
       ocrConfidence: record.ocrConfidence ?? undefined,
@@ -74,8 +80,11 @@ export class PrismaReportRepository implements IReportRepository {
         projectId: data.projectId,
         reportType: data.reportType,
         fileUrl: data.fileUrl,
+        originalFileName: data.originalFileName,
+        mimeType: data.mimeType,
         status: data.status,
         notes: data.notes,
+        summary: data.summary,
         extractionStrategy: data.extractionStrategy,
         ocrProvider: data.ocrProvider,
         ocrConfidence: data.ocrConfidence,
@@ -94,6 +103,9 @@ export class PrismaReportRepository implements IReportRepository {
         extractionStrategy: data.extractionStrategy,
         ocrProvider: data.ocrProvider,
         ocrConfidence: data.ocrConfidence,
+        originalFileName: data.originalFileName,
+        mimeType: data.mimeType,
+        summary: data.summary,
       },
     })
 

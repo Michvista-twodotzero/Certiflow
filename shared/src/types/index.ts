@@ -20,8 +20,11 @@ export interface Report {
   projectId: string
   reportType: ReportType
   fileUrl: string
+  originalFileName?: string
+  mimeType?: string
   status: ReportStatus
   notes?: string
+  summary?: string
   extractionStrategy?: ExtractionStrategy
   ocrProvider?: string
   ocrConfidence?: number
@@ -54,6 +57,8 @@ export interface AuditJobPayload {
   projectId: string
   projectName: string
   reportType: ReportType
+  originalFileName?: string
+  mimeType?: string
 }
 
 export interface AuditViolationResult {
@@ -93,4 +98,10 @@ export interface AuthUser {
 export interface AuthSession {
   token: string
   user: AuthUser
+}
+
+export interface UserSettings {
+  emailNotifications: boolean
+  criticalViolationAlerts: boolean
+  theme: 'dark'
 }

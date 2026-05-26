@@ -34,6 +34,8 @@ export class UploadReportUseCase {
       projectId: dto.projectId,
       reportType: dto.reportType,
       fileUrl,
+      originalFileName: file.originalname,
+      mimeType: file.mimetype,
       notes: dto.notes,
     })
 
@@ -46,6 +48,8 @@ export class UploadReportUseCase {
       projectId: savedReport.projectId,
       projectName: dto.projectName || project.name,
       reportType: savedReport.reportType,
+      originalFileName: savedReport.originalFileName,
+      mimeType: savedReport.mimeType,
     }
 
     await this.queueService.publishAuditJob(jobPayload)

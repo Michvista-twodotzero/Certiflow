@@ -1,6 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { AuditJobPayload, createLogger } from '@certiflow/shared'
 import { auditReport } from '../agent/auditor'
+import { sendAuditNotifications } from '../notifications/email'
 import { prisma } from '../utils/prisma'
 
 const logger = createLogger('ai-worker:queue-consumer')
@@ -11,7 +12,7 @@ export function startQueueConsumer() {
   const worker = new Worker(
     AUDIT_QUEUE_NAME,
     async (job: Job<AuditJobPayload>) => {
-      const { reportId, fileUrl, projectName } = job.data
+      const { reportId, fileUrl, projectName, originalFileName, mimeType } = job.data
 
       logger.info('Job received', { reportId, jobId: job.id })
 
@@ -20,7 +21,7 @@ export function startQueueConsumer() {
         data: { status: 'ANALYZING' },
       })
 
-      const auditResult = await auditReport(fileUrl, projectName)
+      const auditResult = await auditReport(fileUrl, projectName, { originalFileName, mimeType })
 
       if (auditResult.violations.length > 0) {
         await prisma.violation.createMany({
@@ -44,11 +45,45 @@ export function startQueueConsumer() {
         where: { id: reportId },
         data: {
           status: 'COMPLETE',
+          summary: auditResult.summary,
           extractionStrategy: auditResult.extraction.strategy,
           ocrProvider: auditResult.extraction.ocrProvider ?? null,
           ocrConfidence: auditResult.extraction.ocrConfidence ?? null,
         },
       })
+
+      const completedReport = await prisma.report.findUnique({
+        where: { id: reportId },
+        include: {
+          project: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      })
+
+      if (completedReport?.project?.user?.email) {
+        await sendAuditNotifications({
+          recipient: {
+            email: completedReport.project.user.email,
+            name: completedReport.project.user.name,
+            emailNotifications: completedReport.project.user.emailNotifications,
+            criticalViolationAlerts: completedReport.project.user.criticalViolationAlerts,
+          },
+          projectName: completedReport.project.name,
+          reportId,
+          reportType: completedReport.reportType,
+          fileName: completedReport.originalFileName || deriveFileName(fileUrl, reportId),
+          summary: auditResult.summary,
+          violations: auditResult.violations,
+        }).catch((error: unknown) => {
+          logger.error('Failed to send audit notification email', {
+            reportId,
+            error,
+          })
+        })
+      }
 
       logger.info('Report completed', { reportId })
     },
@@ -82,6 +117,16 @@ export function startQueueConsumer() {
   logger.info(`Listening on ${AUDIT_QUEUE_NAME}`)
 
   return worker
+}
+
+function deriveFileName(fileUrl: string, reportId: string) {
+  try {
+    const pathname = new URL(fileUrl).pathname
+    const lastSegment = pathname.split('/').filter(Boolean).pop()
+    return lastSegment || `report-${reportId}`
+  } catch {
+    return `report-${reportId}`
+  }
 }
 
 function createRedisConnection() {

@@ -1,10 +1,12 @@
 export type ReportStatus = 'PENDING' | 'ANALYZING' | 'COMPLETE' | 'FAILED';
 export type ViolationSeverity = 'CRITICAL' | 'MAJOR' | 'MINOR';
 export type ReportType = 'DAILY_SAFETY_LOG' | 'SITE_PHOTO' | 'INCIDENT_REPORT';
+export type ExtractionStrategy = 'NATIVE_TEXT' | 'OCR' | 'GEMINI_FILE' | 'NONE';
 export interface Project {
     id: string;
     name: string;
     location: string;
+    userId?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -13,8 +15,14 @@ export interface Report {
     projectId: string;
     reportType: ReportType;
     fileUrl: string;
+    originalFileName?: string;
+    mimeType?: string;
     status: ReportStatus;
     notes?: string;
+    summary?: string;
+    extractionStrategy?: ExtractionStrategy;
+    ocrProvider?: string;
+    ocrConfidence?: number;
     uploadedAt: Date;
 }
 export interface Violation {
@@ -41,6 +49,8 @@ export interface AuditJobPayload {
     projectId: string;
     projectName: string;
     reportType: ReportType;
+    originalFileName?: string;
+    mimeType?: string;
 }
 export interface AuditViolationResult {
     severity: ViolationSeverity;
@@ -53,10 +63,31 @@ export interface AuditResult {
     violations: AuditViolationResult[];
     summary: string;
     actionableCount: number;
+    extraction: {
+        strategy: ExtractionStrategy;
+        sourceKind: 'pdf' | 'text' | 'image' | 'unknown';
+        ocrPerformed: boolean;
+        ocrProvider?: string;
+        ocrConfidence?: number;
+    };
 }
 export interface JwtPayload {
     userId: string;
     email: string;
     iat?: number;
     exp?: number;
+}
+export interface AuthUser {
+    id: string;
+    name: string;
+    email: string;
+}
+export interface AuthSession {
+    token: string;
+    user: AuthUser;
+}
+export interface UserSettings {
+    emailNotifications: boolean;
+    criticalViolationAlerts: boolean;
+    theme: 'dark';
 }

@@ -4,6 +4,7 @@
   import { severityTone } from '$lib/format'
   import { fetchProjects, resolveProjectName } from '$lib/project-registry'
   import type { Project, Violation } from '@certiflow/shared'
+  import Icon from '$lib/components/Icon.svelte'
 
   type ViolationRow = Violation & {
     projectId: string
@@ -50,24 +51,33 @@
     {:else if rows.length === 0}
       <div class="panel empty-state">No violations have been recorded yet.</div>
     {:else}
-      <div class="violations-list">
-        {#each rows as violation}
-          <article class={`panel violation-card ${severityTone(violation.severity)}`}>
-            <div class="violation-meta">
-              <span class={`badge ${severityTone(violation.severity)}`}>{violation.severity}</span>
-              <span class="badge minor">{violation.ruleReference}</span>
-              <span class="muted">{resolveProjectName(violation.projectId, projects)}</span>
-              {#if violation.sector}
-                <span class="muted">{violation.sector}</span>
-              {/if}
-            </div>
-            <p>{violation.description}</p>
-            <div class="suggestion-box">
-              <div class="eyebrow">Suggested Fix</div>
-              <p class="muted">{violation.suggestion}</p>
-            </div>
-          </article>
-        {/each}
+      <div class="scroll-container" style="max-height: calc(100vh - 12rem); overflow-y: auto; padding-right: 0.25rem;">
+        <div class="violations-list">
+          {#each rows as violation}
+            <article class={`panel violation-card ${severityTone(violation.severity)}`}>
+              <div class="violation-meta">
+                <span class={`badge ${severityTone(violation.severity)}`}>{violation.severity}</span>
+                <span class="badge minor" style="font-family: monospace;">{violation.ruleReference}</span>
+                <span class="badge minor" style="background-color: transparent; border-color: rgba(255,255,255,0.06); font-weight: 500;">
+                  {resolveProjectName(violation.projectId, projects)}
+                </span>
+                {#if violation.sector}
+                  <span class="sector-tag">Sector {violation.sector.replace(/sector\s+/gi, '')}</span>
+                {/if}
+              </div>
+              
+              <p class="violation-description">{violation.description}</p>
+              
+              <div class="suggestion-box">
+                <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem;">
+                  <Icon name="wrench" size={14} style="color: var(--accent);" />
+                  <span class="eyebrow" style="margin: 0; font-size: 0.7rem; color: var(--text-muted);">Suggested Fix</span>
+                </div>
+                <p>{violation.suggestion}</p>
+              </div>
+            </article>
+          {/each}
+        </div>
       </div>
     {/if}
   </div>

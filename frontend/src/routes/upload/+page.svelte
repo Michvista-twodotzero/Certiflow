@@ -2,7 +2,9 @@
   import { onMount } from 'svelte'
   import { submitReport } from '$lib/api'
   import { fetchProjects } from '$lib/project-registry'
+  import { notifications } from '$lib/notifications'
   import type { Project, ReportType } from '@certiflow/shared'
+  import Icon from '$lib/components/Icon.svelte'
 
   let selectedProject = ''
   let projectName = ''
@@ -13,6 +15,7 @@
   let successMessage = ''
   let errorMessage = ''
   let projects: Project[] = []
+  let fileInput: HTMLInputElement
 
   onMount(async () => {
     try {
@@ -56,8 +59,11 @@
       })
 
       successMessage = 'Report submitted. The audit job is now queued.'
+      notifications.add('Report uploaded successfully and queued for AI audit.', 'success')
       notes = ''
       file = null
+      selectedProject = ''
+      projectName = ''
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Submission failed'
     } finally {
@@ -72,21 +78,19 @@
 </script>
 
 <section class="page">
-  <header class="page-header">
-    <div>
-      <h1 class="page-title">Submit Site Report</h1>
-      <p class="page-subtitle">Upload documentation for automated compliance analysis.</p>
-    </div>
-  </header>
+  <div class="content-stack" style="margin-top: 1rem;">
+    <div class="upload-card" style="max-width: 44rem; margin: 0 auto; width: 100%;">
+      <div style="margin-bottom: 1.5rem;">
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.85rem; margin: 0 0 0.4rem 0; color: #fff; font-weight: 700;">Submit Site Report</h1>
+        <p style="color: var(--text-muted); margin: 0; font-size: 0.95rem;">Upload documentation for automated compliance analysis.</p>
+      </div>
 
-  <div class="content-stack">
-    <div class="upload-card" style="max-width: 42rem; margin: 0 auto;">
       {#if successMessage}
-        <div class="alert success">{successMessage}</div>
+        <div class="alert success" style="margin-bottom: 1.25rem;">{successMessage}</div>
       {/if}
 
       {#if errorMessage}
-        <div class="alert error">{errorMessage}</div>
+        <div class="alert error" style="margin-bottom: 1.25rem;">{errorMessage}</div>
       {/if}
 
       <div class="stack">
@@ -94,7 +98,7 @@
           <div class="field">
             <label for="project">Project</label>
             <select id="project" bind:value={selectedProject} on:change={(event) => applyProjectSelection((event.target as HTMLSelectElement).value)}>
-              <option value="">Select project...</option>
+              <option value="">Select Project...</option>
               {#each projects as project}
                 <option value={project.id}>{project.name}</option>
               {/each}
@@ -111,50 +115,54 @@
           </div>
         </div>
 
-        <div class="field-grid">
-          <div class="field">
-            <label for="projectId">Project ID</label>
-            <input id="projectId" bind:value={selectedProject} placeholder="Select an existing project" disabled />
+        <div class="field">
+          <label for="drop-zone">Documentation</label>
+          <div
+            class="drop-zone"
+            on:drop={handleDrop}
+            on:dragover={handleDragOver}
+            on:click={() => fileInput.click()}
+            on:keydown={(e) => e.key === 'Enter' && fileInput.click()}
+            role="button"
+            tabindex="0"
+          >
+            <Icon name="cloud" size={32} class="drop-zone-icon" />
+            {#if file}
+              <p style="color: var(--accent); margin: 0;"><strong>{file.name}</strong></p>
+              <p class="muted" style="margin: 0;">Ready to upload.</p>
+            {:else}
+              <p style="margin: 0; font-weight: 600; color: #fff;">Drop files here or click to upload</p>
+              <p class="muted" style="margin: 0;">Supports PDF, JPG, PNG, CSV (Max 50MB)</p>
+            {/if}
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,.csv"
+              bind:this={fileInput}
+              on:change={handleFileChange}
+              style="display: none;"
+            />
           </div>
-
-          <div class="field">
-            <label for="projectName">Project Name</label>
-            <input id="projectName" bind:value={projectName} placeholder="Choose a project first" disabled />
-          </div>
-        </div>
-
-        <div
-          class="drop-zone"
-          on:drop={handleDrop}
-          on:dragover={handleDragOver}
-          role="button"
-          tabindex="0"
-        >
-          {#if file}
-            <p><strong>{file.name}</strong></p>
-            <p class="muted">Ready to upload.</p>
-          {:else}
-            <p>Drop files here or click to upload.</p>
-            <p class="muted">Supports PDF, JPG, PNG, TIFF, CSV. Files are sent to Gemini Files for audit analysis. Max 50 MB.</p>
-          {/if}
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,.csv" on:change={handleFileChange} style="margin-top: 1rem;" />
         </div>
 
         <div class="field">
-          <label for="notes">Additional Notes</label>
+          <label for="notes">Additional Notes (Optional)</label>
           <textarea
             id="notes"
             bind:value={notes}
-            placeholder="Add any context that would help the auditor."
-            rows="4"
+            placeholder="Provide any context required for the AI auditor..."
+            rows="5"
           ></textarea>
         </div>
 
-        <button class="primary-button" on:click={handleSubmit} disabled={loading}>
-          {loading ? 'Submitting...' : 'Submit for AI Audit'}
+        <button
+          class="primary-button"
+          style="width: 100%; padding: 0.95rem 1rem; font-weight: 700; margin-top: 0.5rem;"
+          on:click={handleSubmit}
+          disabled={loading}
+        >
+          <Icon name="robot" size={18} />
+          <span>{loading ? 'Submitting...' : 'Submit for AI Audit'}</span>
         </button>
-
-        <a class="ghost-button" href="/projects">Need a new project first? Create one here.</a>
       </div>
     </div>
   </div>

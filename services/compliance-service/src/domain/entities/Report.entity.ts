@@ -5,8 +5,11 @@ interface ReportProps {
   projectId: string
   reportType: ReportType
   fileUrl: string
+  originalFileName?: string
+  mimeType?: string
   status: ReportStatus
   notes?: string
+  summary?: string
   extractionStrategy: ExtractionStrategy
   ocrProvider?: string
   ocrConfidence?: number
@@ -24,8 +27,11 @@ export class ReportEntity {
   get projectId() { return this.props.projectId }
   get reportType() { return this.props.reportType }
   get fileUrl() { return this.props.fileUrl }
+  get originalFileName() { return this.props.originalFileName }
+  get mimeType() { return this.props.mimeType }
   get status() { return this.props.status }
   get notes() { return this.props.notes }
+  get summary() { return this.props.summary }
   get extractionStrategy() { return this.props.extractionStrategy }
   get ocrProvider() { return this.props.ocrProvider }
   get ocrConfidence() { return this.props.ocrConfidence }
@@ -64,12 +70,14 @@ export class ReportEntity {
   }
 
   recordExtraction(input: {
+    summary?: string
     extractionStrategy: ExtractionStrategy
     ocrProvider?: string
     ocrConfidence?: number
   }): ReportEntity {
     return new ReportEntity({
       ...this.props,
+      summary: input.summary,
       extractionStrategy: input.extractionStrategy,
       ocrProvider: input.ocrProvider,
       ocrConfidence: input.ocrConfidence,

@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as http from 'http'
 import * as https from 'https'
+import type { IncomingMessage } from 'http'
 import * as path from 'path'
 import { AuditResult, createLogger } from '@certiflow/shared'
 import { createAuditContents, createGeminiClient, deleteHostedFile, ensureOshaFileSearchStore, uploadReportFile } from '../rag/retriever'
@@ -30,7 +31,11 @@ Return only valid JSON in this shape:
 If no violations are found, return an empty array and a compliant summary.
 `.trim()
 
-export async function auditReport(fileUrl: string, projectName: string): Promise<AuditResult> {
+export async function auditReport(
+  fileUrl: string,
+  projectName: string,
+  fileMeta?: { originalFileName?: string; mimeType?: string },
+): Promise<AuditResult> {
   const ai = createGeminiClient()
 
   logger.info('Starting AI audit', { projectName, fileUrl })
@@ -41,9 +46,9 @@ export async function auditReport(fileUrl: string, projectName: string): Promise
 
   try {
     tempFilePath = await downloadFile(fileUrl)
-    const extractedDocument = await extractDocumentContent(tempFilePath, fileUrl)
+    const extractedDocument = await extractDocumentContent(tempFilePath, fileUrl, fileMeta)
     const oshaStore = await ensureOshaFileSearchStore(ai)
-    hostedReportFiles.push(await uploadReportFile(ai, tempFilePath, fileUrl))
+    hostedReportFiles.push(await uploadReportFile(ai, tempFilePath, fileUrl, fileMeta))
 
     if (extractedDocument.content.trim()) {
       transcriptPath = await writeTranscriptFile(tempFilePath, extractedDocument.content)
@@ -83,7 +88,7 @@ export async function auditReport(fileUrl: string, projectName: string): Promise
         ],
       },
     }))
-    const rawResponse = result.text ?? ''
+    const rawResponse = readGeneratedText(result)
 
     logger.info('Gemini analysis complete, parsing response')
     return parseGeminiResponse(rawResponse, extractedDocument)
@@ -139,6 +144,15 @@ function parseGeminiResponse(raw: string, extractedDocument: Awaited<ReturnType<
   }
 }
 
+function readGeneratedText(result: unknown) {
+  if (typeof result === 'object' && result && 'text' in result) {
+    const text = (result as { text?: string | null }).text
+    return text ?? ''
+  }
+
+  return ''
+}
+
 async function writeTranscriptFile(sourcePath: string, content: string) {
   const transcriptPath = `${sourcePath}.extracted.txt`
   fs.writeFileSync(transcriptPath, content, 'utf-8')
@@ -179,7 +193,7 @@ function downloadFile(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(tempPath)
 
-    const request = requestClient.get(url, (response) => {
+    const request = requestClient.get(url, (response: IncomingMessage) => {
       if (response.statusCode && response.statusCode >= 400) {
         file.close()
         fs.unlink(tempPath, () => {})
@@ -194,7 +208,7 @@ function downloadFile(url: string): Promise<string> {
       })
     })
 
-    request.on('error', (error) => {
+    request.on('error', (error: Error) => {
       file.close()
       fs.unlink(tempPath, () => {})
       reject(error)
