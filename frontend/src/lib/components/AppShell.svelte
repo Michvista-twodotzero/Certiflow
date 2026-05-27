@@ -95,8 +95,8 @@
   <div class="workspace">
     <div class="top-nav-actions">
       <!-- Notification Bell -->
-      <div class="notification-wrapper" on:click|stopPropagation>
-        <button class="top-action-btn" aria-label="Notifications" on:click={toggleNotifications}>
+      <div class="notification-wrapper">
+        <button class="top-action-btn" aria-label="Notifications" on:click|stopPropagation={toggleNotifications}>
           <Icon name="bell" size={20} />
           {#if $unreadCount > 0}
             <span class="notif-badge">{$unreadCount}</span>
@@ -104,7 +104,7 @@
         </button>
 
         {#if showNotifications}
-          <div class="notification-dropdown">
+          <div class="notification-dropdown" role="presentation" on:mousedown|stopPropagation>
             <div class="notif-header">
               <strong style="font-size: 0.95rem; color: #fff;">Notifications</strong>
               {#if $notifications.length > 0}

@@ -6,78 +6,56 @@ const logger = createLogger('ai-worker:email')
 type NotificationRecipient = {
   email: string
   name: string
-  emailNotifications: boolean
-  criticalViolationAlerts: boolean
+  emailNotifications?: boolean
 }
 
-type AuditNotificationInput = {
+type ReportStatusEmailInput = {
   recipient: NotificationRecipient
   projectName: string
   reportId: string
   reportType: ReportType
   fileName: string
-  summary: string
-  violations: AuditViolationResult[]
+  status: 'COMPLETE' | 'FAILED'
+  summary?: string
+  violations?: AuditViolationResult[]
+  failureReason?: string
 }
 
 let transporter: nodemailer.Transporter | null | undefined
 
-export async function sendAuditNotifications(input: AuditNotificationInput) {
+export async function sendReportStatusEmail(input: ReportStatusEmailInput) {
+  if (!input.recipient.emailNotifications) {
+    return null
+  }
+
   const activeTransporter = getTransporter()
   if (!activeTransporter) {
     logger.warn('Email delivery skipped because SMTP is not configured')
-    return []
+    return null
   }
 
-  const { recipient, violations } = input
-  const criticalCount = violations.filter((violation) => violation.severity === 'CRITICAL').length
-  const majorCount = violations.filter((violation) => violation.severity === 'MAJOR').length
-  const minorCount = violations.filter((violation) => violation.severity === 'MINOR').length
+  const criticalCount = input.violations?.filter((violation) => violation.severity === 'CRITICAL').length ?? 0
+  const majorCount = input.violations?.filter((violation) => violation.severity === 'MAJOR').length ?? 0
+  const minorCount = input.violations?.filter((violation) => violation.severity === 'MINOR').length ?? 0
 
-  const results: Array<{ kind: 'completion' | 'critical'; messageId: string; previewUrl?: string | false }> = []
+  const info = await activeTransporter.sendMail({
+    from: getMailFrom(),
+    to: input.recipient.email,
+    subject: buildSubject(input),
+    text: buildText(input, { criticalCount, majorCount, minorCount }),
+    html: buildHtml(input, { criticalCount, majorCount, minorCount }),
+  })
 
-  if (recipient.emailNotifications) {
-    const info = await activeTransporter.sendMail({
-      from: getMailFrom(),
-      to: recipient.email,
-      subject: `[CertiFlow] Audit complete for ${input.projectName}`,
-      text: buildCompletionText({ ...input, criticalCount, majorCount, minorCount }),
-      html: buildCompletionHtml({ ...input, criticalCount, majorCount, minorCount }),
-    })
-    results.push({
-      kind: 'completion',
-      messageId: info.messageId,
-      previewUrl: nodemailer.getTestMessageUrl(info),
-    })
+  logger.info('Report status email sent', {
+    reportId: input.reportId,
+    recipientEmail: input.recipient.email,
+    status: input.status,
+  })
 
-    logger.info('Audit completion email sent', {
-      reportId: input.reportId,
-      recipientEmail: recipient.email,
-    })
+  return {
+    messageId: info.messageId,
+    previewUrl: nodemailer.getTestMessageUrl(info),
   }
-
-  if (recipient.criticalViolationAlerts && criticalCount > 0) {
-    const info = await activeTransporter.sendMail({
-      from: getMailFrom(),
-      to: recipient.email,
-      subject: `[CertiFlow] Critical violations detected for ${input.projectName}`,
-      text: buildCriticalAlertText({ ...input, criticalCount }),
-      html: buildCriticalAlertHtml({ ...input, criticalCount }),
-    })
-    results.push({
-      kind: 'critical',
-      messageId: info.messageId,
-      previewUrl: nodemailer.getTestMessageUrl(info),
-    })
-
-    logger.info('Critical violation alert email sent', {
-      reportId: input.reportId,
-      recipientEmail: recipient.email,
-      criticalCount,
-    })
-  }
-
-  return results
 }
 
 function getTransporter() {
@@ -115,72 +93,76 @@ function getTransporter() {
   return transporter
 }
 
-function getMailFrom() {
-  return process.env.MAIL_FROM?.trim() || process.env.SMTP_USER?.trim() || 'no-reply@certiflow.local'
+function buildSubject(input: ReportStatusEmailInput) {
+  if (input.status === 'FAILED') {
+    return `[CertiFlow] Audit failed for ${input.projectName}`
+  }
+
+  return `[CertiFlow] Audit complete for ${input.projectName}`
 }
 
-function buildCompletionText(input: AuditNotificationInput & {
-  criticalCount: number
-  majorCount: number
-  minorCount: number
-}) {
+function buildText(
+  input: ReportStatusEmailInput,
+  counts: { criticalCount: number; majorCount: number; minorCount: number },
+) {
+  if (input.status === 'FAILED') {
+    return [
+      `Hi ${input.recipient.name},`,
+      '',
+      `Your ${formatReportType(input.reportType)} audit for "${input.projectName}" could not be completed.`,
+      `Source file: ${input.fileName}`,
+      '',
+      input.failureReason ? `Reason: ${input.failureReason}` : 'Reason: The worker could not finish the analysis.',
+      '',
+      'Please sign in to CertiFlow and retry the upload or review the report details.',
+    ].join('\n')
+  }
+
   return [
     `Hi ${input.recipient.name},`,
     '',
     `Your ${formatReportType(input.reportType)} audit for "${input.projectName}" has completed in CertiFlow.`,
     `Source file: ${input.fileName}`,
-    `Critical: ${input.criticalCount} | Major: ${input.majorCount} | Minor: ${input.minorCount}`,
+    `Critical: ${counts.criticalCount} | Major: ${counts.majorCount} | Minor: ${counts.minorCount}`,
     '',
-    `Summary: ${input.summary}`,
+    `Summary: ${input.summary || 'The audit completed successfully.'}`,
     '',
     'Please sign in to CertiFlow to review the full findings and recommended actions.',
   ].join('\n')
 }
 
-function buildCompletionHtml(input: AuditNotificationInput & {
-  criticalCount: number
-  majorCount: number
-  minorCount: number
-}) {
+function buildHtml(
+  input: ReportStatusEmailInput,
+  counts: { criticalCount: number; majorCount: number; minorCount: number },
+) {
+  if (input.status === 'FAILED') {
+    return `
+      <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.5;">
+        <p>Hi ${escapeHtml(input.recipient.name)},</p>
+        <p>Your <strong>${escapeHtml(formatReportType(input.reportType))}</strong> audit for <strong>${escapeHtml(input.projectName)}</strong> could not be completed.</p>
+        <p><strong>Source file:</strong> ${escapeHtml(input.fileName)}</p>
+        <p><strong>Reason:</strong> ${escapeHtml(input.failureReason || 'The worker could not finish the analysis.')}</p>
+        <p>Please sign in to CertiFlow and retry the upload or review the report details.</p>
+      </div>
+    `.trim()
+  }
+
   return `
     <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.5;">
       <p>Hi ${escapeHtml(input.recipient.name)},</p>
       <p>Your <strong>${escapeHtml(formatReportType(input.reportType))}</strong> audit for <strong>${escapeHtml(input.projectName)}</strong> has completed in CertiFlow.</p>
       <p><strong>Source file:</strong> ${escapeHtml(input.fileName)}<br />
-      <strong>Critical:</strong> ${input.criticalCount} |
-      <strong>Major:</strong> ${input.majorCount} |
-      <strong>Minor:</strong> ${input.minorCount}</p>
-      <p><strong>Summary:</strong> ${escapeHtml(input.summary)}</p>
+      <strong>Critical:</strong> ${counts.criticalCount} |
+      <strong>Major:</strong> ${counts.majorCount} |
+      <strong>Minor:</strong> ${counts.minorCount}</p>
+      <p><strong>Summary:</strong> ${escapeHtml(input.summary || 'The audit completed successfully.')}</p>
       <p>Please sign in to CertiFlow to review the full findings and recommended actions.</p>
     </div>
   `.trim()
 }
 
-function buildCriticalAlertText(input: AuditNotificationInput & { criticalCount: number }) {
-  return [
-    `Hi ${input.recipient.name},`,
-    '',
-    `CertiFlow detected ${input.criticalCount} critical violation(s) in "${input.projectName}".`,
-    `Report type: ${formatReportType(input.reportType)}`,
-    `Source file: ${input.fileName}`,
-    '',
-    `Summary: ${input.summary}`,
-    '',
-    'Immediate review is recommended.',
-  ].join('\n')
-}
-
-function buildCriticalAlertHtml(input: AuditNotificationInput & { criticalCount: number }) {
-  return `
-    <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.5;">
-      <p>Hi ${escapeHtml(input.recipient.name)},</p>
-      <p><strong>CertiFlow detected ${input.criticalCount} critical violation(s)</strong> in <strong>${escapeHtml(input.projectName)}</strong>.</p>
-      <p><strong>Report type:</strong> ${escapeHtml(formatReportType(input.reportType))}<br />
-      <strong>Source file:</strong> ${escapeHtml(input.fileName)}</p>
-      <p><strong>Summary:</strong> ${escapeHtml(input.summary)}</p>
-      <p>Immediate review is recommended.</p>
-    </div>
-  `.trim()
+function getMailFrom() {
+  return process.env.MAIL_FROM?.trim() || process.env.SMTP_USER?.trim() || 'no-reply@certiflow.local'
 }
 
 function formatReportType(reportType: ReportType) {

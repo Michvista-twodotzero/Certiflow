@@ -17,6 +17,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     res.json(successResponse({
       emailNotifications: user.emailNotifications ?? true,
       criticalViolationAlerts: user.criticalViolationAlerts ?? true,
+      notificationSound: user.notificationSound ?? true,
       theme: 'dark' as const,
     }))
   } catch (error) {
@@ -29,15 +30,18 @@ router.patch('/', async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.headers['x-user-id'] as string
     const emailNotifications = Boolean(req.body.emailNotifications)
     const criticalViolationAlerts = Boolean(req.body.criticalViolationAlerts)
+    const notificationSound = Boolean(req.body.notificationSound)
 
     const user = await authRepository.updateSettings(userId, {
       emailNotifications,
       criticalViolationAlerts,
+      notificationSound,
     })
 
     res.json(successResponse({
       emailNotifications: user.emailNotifications ?? true,
       criticalViolationAlerts: user.criticalViolationAlerts ?? true,
+      notificationSound: user.notificationSound ?? true,
       theme: 'dark' as const,
     }, 'Settings updated'))
   } catch (error) {

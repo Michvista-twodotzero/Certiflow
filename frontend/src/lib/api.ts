@@ -103,7 +103,9 @@ export function fetchSettings(): Promise<UserSettings> {
   return request<UserSettings>('/settings')
 }
 
-export function saveSettings(payload: Pick<UserSettings, 'emailNotifications' | 'criticalViolationAlerts'>): Promise<UserSettings> {
+export function saveSettings(
+  payload: Pick<UserSettings, 'emailNotifications' | 'criticalViolationAlerts' | 'notificationSound'>,
+): Promise<UserSettings> {
   return request<UserSettings>('/settings', {
     method: 'PATCH',
     headers: {

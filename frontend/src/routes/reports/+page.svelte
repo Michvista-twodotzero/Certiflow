@@ -145,9 +145,9 @@
         Showing {filteredReports.length} of {allReports.length} report{allReports.length !== 1 ? 's' : ''}
       </div>
       <div class="scroll-container" style="max-height: calc(100vh - 15rem); overflow-y: auto; padding-right: 0.25rem;">
-        <div class="grid-2">
+        <div class="grid-2 report-grid">
           {#each filteredReports as report}
-            <article class="report-card panel" style="display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem;">
+            <article class="report-card panel" style="display: flex; flex-direction: column; gap: 1.25rem;">
               <div>
                 <div class="report-meta" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
                   <span class={`badge ${statusTone(report.status)}`}>{report.status}</span>
@@ -194,6 +194,10 @@
 </section>
 
 <style>
+  .report-grid {
+    align-items: start;
+  }
+
   .status-pill-group {
     display: flex;
     gap: 0.35rem;

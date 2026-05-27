@@ -7,6 +7,7 @@ const STORAGE_KEY = 'certiflow-user-settings'
 const DEFAULT_SETTINGS: UserSettings = {
   emailNotifications: true,
   criticalViolationAlerts: true,
+  notificationSound: true,
   theme: 'dark',
 }
 

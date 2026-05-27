@@ -14,6 +14,7 @@ model User {
   name      String
   emailNotifications Boolean @default(true)
   criticalViolationAlerts Boolean @default(true)
+  notificationSound Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

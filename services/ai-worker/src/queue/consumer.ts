@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { AuditJobPayload, createLogger } from '@certiflow/shared'
 import { auditReport } from '../agent/auditor'
-import { sendAuditNotifications } from '../notifications/email'
+import { sendReportStatusEmail } from '../notifications/email'
 import { prisma } from '../utils/prisma'
 
 const logger = createLogger('ai-worker:queue-consumer')
@@ -64,17 +64,17 @@ export function startQueueConsumer() {
       })
 
       if (completedReport?.project?.user?.email) {
-        await sendAuditNotifications({
+        await sendReportStatusEmail({
           recipient: {
             email: completedReport.project.user.email,
             name: completedReport.project.user.name,
             emailNotifications: completedReport.project.user.emailNotifications,
-            criticalViolationAlerts: completedReport.project.user.criticalViolationAlerts,
           },
           projectName: completedReport.project.name,
           reportId,
           reportType: completedReport.reportType,
           fileName: completedReport.originalFileName || deriveFileName(fileUrl, reportId),
+          status: 'COMPLETE',
           summary: auditResult.summary,
           violations: auditResult.violations,
         }).catch((error: unknown) => {
@@ -101,12 +101,46 @@ export function startQueueConsumer() {
     logger.error('Job failed', { jobId: job?.id, reportId: job?.data?.reportId, error: error.message })
 
     if (job?.data?.reportId) {
+      const reportId = job.data.reportId
+
       await prisma.report.update({
-        where: { id: job.data.reportId },
+        where: { id: reportId },
         data: { status: 'FAILED' },
       }).catch((updateError: unknown) => {
         logger.error('Failed to mark report as FAILED', { updateError })
       })
+
+      const failedReport = await prisma.report.findUnique({
+        where: { id: reportId },
+        include: {
+          project: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      }).catch(() => null)
+
+      if (failedReport?.project?.user?.email) {
+        await sendReportStatusEmail({
+          recipient: {
+            email: failedReport.project.user.email,
+            name: failedReport.project.user.name,
+            emailNotifications: failedReport.project.user.emailNotifications,
+          },
+          projectName: failedReport.project.name,
+          reportId,
+          reportType: failedReport.reportType,
+          fileName: failedReport.originalFileName || deriveFileName(job.data.fileUrl, reportId),
+          status: 'FAILED',
+          failureReason: error.message,
+        }).catch((emailError: unknown) => {
+          logger.error('Failed to send report failure email', {
+            reportId,
+            emailError,
+          })
+        })
+      }
     }
   })
 

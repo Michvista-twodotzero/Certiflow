@@ -22,7 +22,7 @@
   $: resolvedThisWeek = summaries
     .flatMap(({ violations }) => violations)
     .filter((violation) => violation.isResolved && Date.now() - violation.detectedAt.getTime() < 7 * 24 * 60 * 60 * 1000).length
-  $: recentReports = [...summaries].sort((a, b) => b.report.uploadedAt.getTime() - a.report.uploadedAt.getTime()).slice(0, 6)
+  $: recentReports = [...summaries].sort((a, b) => b.report.uploadedAt.getTime() - a.report.uploadedAt.getTime()).slice(0, 5)
 
   onMount(async () => {
     try {

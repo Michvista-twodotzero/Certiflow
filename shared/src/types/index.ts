@@ -103,5 +103,6 @@ export interface AuthSession {
 export interface UserSettings {
   emailNotifications: boolean
   criticalViolationAlerts: boolean
+  notificationSound: boolean
   theme: 'dark'
 }

@@ -8,6 +8,7 @@ type PrismaUser = {
   password: string
   emailNotifications: boolean
   criticalViolationAlerts: boolean
+  notificationSound?: boolean
 }
 
 export class PrismaUserAuthRepository implements AuthUserRepository {
@@ -26,7 +27,10 @@ export class PrismaUserAuthRepository implements AuthUserRepository {
     return this.toRecord(user as PrismaUser)
   }
 
-  async updateSettings(userId: string, settings: { emailNotifications: boolean; criticalViolationAlerts: boolean }): Promise<AuthUserRecord> {
+  async updateSettings(
+    userId: string,
+    settings: { emailNotifications: boolean; criticalViolationAlerts: boolean; notificationSound: boolean },
+  ): Promise<AuthUserRecord> {
     const user = await prisma.user.update({
       where: { id: userId },
       data: settings,
@@ -43,6 +47,7 @@ export class PrismaUserAuthRepository implements AuthUserRepository {
       password: user.password,
       emailNotifications: user.emailNotifications,
       criticalViolationAlerts: user.criticalViolationAlerts,
+      notificationSound: user.notificationSound,
     }
   }
 }

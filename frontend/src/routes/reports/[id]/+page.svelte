@@ -19,6 +19,8 @@
   $: majorCount = violations.filter((violation) => violation.severity === 'MAJOR' && !violation.isResolved).length
   $: actionableCount = violations.filter((violation) => !violation.isResolved).length
   $: actionablePercent = violations.length ? Math.round((actionableCount / violations.length) * 100) : 0
+  $: minorCount = violations.filter((violation) => violation.severity === 'MINOR' && !violation.isResolved).length
+  $: resolvedCount = violations.filter((violation) => violation.isResolved).length
   $: reportFileName = report ? getReportSourceFileName(report) : ''
   $: fallbackSummary = actionableCount > 0
     ? `Automated analysis identified ${criticalCount} critical and ${majorCount} major open issue(s). Review the listed findings below for the exact affected areas and suggested actions.`
@@ -189,7 +191,22 @@
             </div>
           {/if}
 
-          <div class="scroll-container" style="max-height: calc(100vh - 16rem); overflow-y: auto; padding-right: 0.25rem;">
+          <div class="quick-filter-row">
+            <button class="ghost-button compact-filter" class:active-filter={severityFilter === 'CRITICAL'} on:click={() => (severityFilter = severityFilter === 'CRITICAL' ? 'ALL' : 'CRITICAL')}>
+              Critical <span>{criticalCount}</span>
+            </button>
+            <button class="ghost-button compact-filter" class:active-filter={severityFilter === 'MAJOR'} on:click={() => (severityFilter = severityFilter === 'MAJOR' ? 'ALL' : 'MAJOR')}>
+              Major <span>{majorCount}</span>
+            </button>
+            <button class="ghost-button compact-filter" class:active-filter={severityFilter === 'MINOR'} on:click={() => (severityFilter = severityFilter === 'MINOR' ? 'ALL' : 'MINOR')}>
+              Minor <span>{minorCount}</span>
+            </button>
+            <button class="ghost-button compact-filter" class:active-filter={resolutionFilter === 'RESOLVED'} on:click={() => (resolutionFilter = resolutionFilter === 'RESOLVED' ? 'ALL' : 'RESOLVED')}>
+              Resolved <span>{resolvedCount}</span>
+            </button>
+          </div>
+
+          <div class="scroll-container violation-stack" style="max-height: calc(100vh - 16rem); overflow-y: auto; padding-right: 0.25rem;">
             {#if filteredViolations.length === 0}
               <div class="panel empty-state">No violations match the current filters.</div>
             {/if}
@@ -235,3 +252,36 @@
     </div>
   {/if}
 </section>
+
+<style>
+  .violation-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .quick-filter-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+
+  .compact-filter {
+    font-size: 0.76rem;
+    padding: 0.35rem 0.7rem;
+  }
+
+  .compact-filter span {
+    display: inline-flex;
+    min-width: 1.2rem;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+
+  .active-filter {
+    border-color: rgba(255, 159, 10, 0.3) !important;
+    color: var(--accent) !important;
+    background: rgba(255, 159, 10, 0.08) !important;
+  }
+</style>

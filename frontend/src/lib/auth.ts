@@ -64,4 +64,7 @@ export function login(input: { email: string; password: string }) {
 
 export function logout() {
   setAuthSession(null)
+  if (browser) {
+    window.localStorage.removeItem('certiflow-report-status-snapshot')
+  }
 }

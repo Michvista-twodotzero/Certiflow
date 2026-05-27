@@ -9,6 +9,7 @@
 
   let emailNotifications = true
   let reportAlerts = true
+  let notificationSound = true
   let showSaved = false
   let saving = false
 
@@ -16,11 +17,13 @@
     const localSettings = userSettings.load()
     emailNotifications = localSettings.emailNotifications
     reportAlerts = localSettings.criticalViolationAlerts
+    notificationSound = localSettings.notificationSound
 
     try {
       const remoteSettings = await fetchSettings()
       emailNotifications = remoteSettings.emailNotifications
       reportAlerts = remoteSettings.criticalViolationAlerts
+      notificationSound = remoteSettings.notificationSound
       userSettings.set(remoteSettings)
     } catch {
       // Keep local fallback if settings endpoint is unavailable.
@@ -34,6 +37,7 @@
       const saved = await saveSettings({
         emailNotifications,
         criticalViolationAlerts: reportAlerts,
+        notificationSound,
       })
 
       userSettings.set(saved)
@@ -81,7 +85,7 @@
       <div class="settings-row">
         <div>
           <strong style="color: #fff; font-size: 0.95rem;">Email Notifications</strong>
-          <p class="muted" style="margin: 0.2rem 0 0 0; font-size: 0.85rem;">Receive email alerts when a report audit completes.</p>
+          <p class="muted" style="margin: 0.2rem 0 0 0; font-size: 0.85rem;">Receive email alerts when a report moves from analyzing to completed or failed.</p>
         </div>
         <label class="toggle">
           <input type="checkbox" bind:checked={emailNotifications} />
@@ -91,11 +95,22 @@
 
       <div class="settings-row">
         <div>
-          <strong style="color: #fff; font-size: 0.95rem;">Critical Violation Alerts</strong>
-          <p class="muted" style="margin: 0.2rem 0 0 0; font-size: 0.85rem;">Get notified when critical safety violations are detected.</p>
+          <strong style="color: #fff; font-size: 0.95rem;">In-App Report Alerts</strong>
+          <p class="muted" style="margin: 0.2rem 0 0 0; font-size: 0.85rem;">Show bell notifications when a report moves from analyzing to completed or failed.</p>
         </div>
         <label class="toggle">
           <input type="checkbox" bind:checked={reportAlerts} />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <strong style="color: #fff; font-size: 0.95rem;">Notification Sound</strong>
+          <p class="muted" style="margin: 0.2rem 0 0 0; font-size: 0.85rem;">Play a short ping when a new report-status notification arrives.</p>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" bind:checked={notificationSound} />
           <span class="toggle-slider"></span>
         </label>
       </div>

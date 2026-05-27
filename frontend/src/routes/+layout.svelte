@@ -5,6 +5,7 @@
   import { onMount } from 'svelte'
   import AppShell from '$lib/components/AppShell.svelte'
   import { authSession, getStoredSession } from '$lib/auth'
+  import { startReportStatusMonitor } from '$lib/report-status-monitor'
   import { userSettings } from '$lib/settings'
   import '$lib/styles.css'
 
@@ -13,11 +14,17 @@
   onMount(() => {
     if (!browser) return
 
-    authSession.set(getStoredSession())
+    const storedSession = getStoredSession()
+    authSession.set(storedSession)
     userSettings.load()
+    const stopStatusMonitor = storedSession ? startReportStatusMonitor() : () => {}
 
-    if (!$page.url.pathname.startsWith('/auth') && !getStoredSession()) {
+    if (!$page.url.pathname.startsWith('/auth') && !storedSession) {
       goto('/auth')
+    }
+
+    return () => {
+      stopStatusMonitor()
     }
   })
 </script>
