@@ -41,7 +41,7 @@ Client (SvelteKit)
 | Frontend | SvelteKit + Tailwind CSS |
 | Database | PostgreSQL via Supabase |
 | ORM | Prisma |
-| AI Model | Gemini 1.5 Flash |
+| AI Model | Gemini 2.5 Flash |
 | Queue | BullMQ + Upstash Redis |
 | File Storage | Cloudinary |
 | Logging | Winston |
