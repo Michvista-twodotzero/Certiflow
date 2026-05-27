@@ -195,10 +195,9 @@
     {:else if projects.length === 0}
       <div class="panel empty-state">No projects yet. Create one above to start using uploads.</div>
     {:else}
-      <div class="scroll-container" style="max-height: calc(100vh - 28rem); overflow-y: auto; padding-right: 0.25rem;">
-        <div class="grid-3">
+      <div class="projects-grid">
           {#each projects as project}
-            <article class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <article class="panel project-card">
               {#if editingProjectId === project.projectId}
                 <div class="stack">
                   <div class="field">
@@ -247,8 +246,23 @@
               {/if}
             </article>
           {/each}
-        </div>
       </div>
     {/if}
   </div>
 </section>
+
+<style>
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18.5rem, 1fr));
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .project-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 16rem;
+  }
+</style>
