@@ -36,14 +36,13 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: api-gateway
     container_name: certiflow-gateway
-    working_dir: /app
-    command: sh -c "npm run build --workspace=shared && npm run dev --workspace=api-gateway"
     ports:
       - "3000:3000"
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       COMPLIANCE_SERVICE_URL: http://compliance-service:3001
       AI_WORKER_URL: http://ai-worker:3002
       JWT_SECRET: ${JWT_SECRET}
@@ -59,27 +58,17 @@ services:
         condition: service_started
     networks:
       - certiflow-network
-    develop:
-      watch:
-        - action: sync
-          path: ./api-gateway/src
-          target: /app/api-gateway/src
-        - action: rebuild
-          path: ./api-gateway/package.json
-        - action: rebuild
-          path: ./shared/src
 
   compliance-service:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: compliance-service
     container_name: certiflow-compliance
-    working_dir: /app
-    command: sh -c "npm run build --workspace=shared && npx prisma db push --schema services/compliance-service/prisma/schema.prisma && npm run prisma:generate --workspace=services/compliance-service && npm run dev --workspace=services/compliance-service"
     ports:
       - "3001:3001"
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgresql://certiflow:certiflow_password@postgres-compliance:5432/compliance_db}
       REDIS_URL: ${COMPOSE_REDIS_URL:-redis://redis:6379}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
@@ -98,30 +87,17 @@ services:
         condition: service_healthy
     networks:
       - certiflow-network
-    develop:
-      watch:
-        - action: sync
-          path: ./services/compliance-service/src
-          target: /app/services/compliance-service/src
-        - action: sync
-          path: ./services/compliance-service/prisma
-          target: /app/services/compliance-service/prisma
-        - action: rebuild
-          path: ./services/compliance-service/package.json
-        - action: rebuild
-          path: ./shared/src
 
   ai-worker:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: ai-worker
     container_name: certiflow-ai-worker
-    working_dir: /app
-    command: sh -c "npm run build --workspace=shared && npm run dev --workspace=services/ai-worker"
     ports:
       - "3002:3002"
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       REDIS_URL: ${COMPOSE_REDIS_URL:-redis://redis:6379}
       DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgresql://certiflow:certiflow_password@postgres-compliance:5432/compliance_db}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
@@ -144,23 +120,13 @@ services:
         condition: service_healthy
     networks:
       - certiflow-network
-    develop:
-      watch:
-        - action: sync
-          path: ./services/ai-worker/src
-          target: /app/services/ai-worker/src
-        - action: rebuild
-          path: ./services/ai-worker/package.json
-        - action: rebuild
-          path: ./shared/src
 
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: frontend
     container_name: certiflow-frontend
-    working_dir: /app
-    command: sh -c "npm run build --workspace=shared && npm run dev --workspace=frontend -- --host 0.0.0.0"
     ports:
       - "5173:5173"
     environment:
@@ -170,18 +136,6 @@ services:
         condition: service_healthy
     networks:
       - certiflow-network
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/frontend/src
-        - action: sync
-          path: ./frontend/static
-          target: /app/frontend/static
-        - action: rebuild
-          path: ./frontend/package.json
-        - action: rebuild
-          path: ./shared/src
 
 volumes:
   compliance_data:

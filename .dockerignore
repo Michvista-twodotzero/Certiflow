@@ -3,6 +3,9 @@ node_modules
 dist
 **/dist
 build
+**/build
+.svelte-kit
+**/.svelte-kit
 .env
 .env.*
 .log.*
@@ -11,12 +14,18 @@ build
 **/node_modules
 **/.git
 **/dist
+**/build
+.svelte-kit
+**/.svelte-kit
 **/.env
 **/.env.*
 
 **/node_modules
 **/.git
 **/dist
+**/build
+.svelte-kit
+**/.svelte-kit
 **/.env
 **/.env.*
 **/.prisma
