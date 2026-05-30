@@ -40,6 +40,8 @@ COPY --from=build /app/shared/package.json ./shared/package.json
 COPY --from=build /app/shared/dist ./shared/dist
 COPY --from=build /app/services/ai-worker/package.json ./services/ai-worker/package.json
 COPY --from=build /app/services/ai-worker/dist ./services/ai-worker/dist
+# Ship the OSHA reference PDF next to the compiled worker so the runtime can always find it.
+COPY --from=build /app/services/ai-worker/src/rag/documents ./services/ai-worker/dist/rag/documents
 
 EXPOSE 3002
 CMD ["node", "services/ai-worker/dist/index.js"]

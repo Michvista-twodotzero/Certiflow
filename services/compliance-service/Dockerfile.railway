@@ -44,6 +44,8 @@ COPY --from=build /app/services/compliance-service/prisma ./services/compliance-
 COPY --from=build /app/services/compliance-service/dist ./services/compliance-service/dist
 COPY --from=build /app/services/ai-worker/package.json ./services/ai-worker/package.json
 COPY --from=build /app/services/ai-worker/dist ./services/ai-worker/dist
+# Copy the OSHA reference PDF for the embedded worker so audits do not depend on source files being mounted.
+COPY --from=build /app/services/ai-worker/src/rag/documents ./services/ai-worker/dist/rag/documents
 
 EXPOSE 3001
 

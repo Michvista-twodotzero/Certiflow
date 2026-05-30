@@ -9,6 +9,12 @@ const OSHA_FILE_SEARCH_DISPLAY_NAME = process.env.GEMINI_FILE_SEARCH_DISPLAY_NAM
 const FILE_POLL_INTERVAL_MS = 2000
 const FILE_POLL_TIMEOUT_MS = 60_000
 const RETRY_DELAYS_MS = [1000, 3000, 6000]
+const OSHA_FALLBACK_REFERENCE = [
+  'OSHA 29 CFR 1926 reference notes.',
+  'Use this fallback only when the full OSHA PDF is unavailable.',
+  'Focus the review on common construction hazards: fall protection, PPE, ladders, scaffolds, housekeeping, electrical safety, and trench/excavation protection.',
+  'If the report is ambiguous, prefer conservative safety guidance and flag the item for manual review.',
+].join('\n')
 
 interface HostedFile {
   name: string
@@ -47,9 +53,6 @@ export async function ensureOshaFileSearchStore(ai: GoogleGenAI): Promise<FileSe
   }
 
   const oshaPdfPath = resolveOshaPdfPath()
-  if (!oshaPdfPath) {
-    throw new Error('OSHA reference PDF not found at services/ai-worker/src/rag/documents/osha-1926.pdf')
-  }
 
   const store = await retryGeminiCall(() => ai.fileSearchStores.create({
     config: {
@@ -239,9 +242,23 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function materializeOshaSourceFile(oshaPdfPath: string) {
+async function materializeOshaSourceFile(oshaPdfPath: string | null) {
   const tempDir = path.join(process.cwd(), 'tmp')
   fs.mkdirSync(tempDir, { recursive: true })
+
+  if (!oshaPdfPath) {
+    const fallbackPath = path.join(tempDir, 'osha-1926-fallback.txt')
+    fs.writeFileSync(fallbackPath, OSHA_FALLBACK_REFERENCE, 'utf-8')
+    logger.warn('OSHA reference PDF was not found, using fallback reference notes', {
+      fallbackPath,
+    })
+
+    return {
+      filePath: fallbackPath,
+      mimeType: 'text/plain',
+      displayName: 'OSHA 29 CFR 1926 Reference Notes',
+    }
+  }
 
   try {
     const pdfData = await pdfParse(fs.readFileSync(oshaPdfPath))
