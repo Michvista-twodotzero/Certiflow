@@ -36,6 +36,10 @@ export function setAuthSession(session: AuthSession | null) {
   }
 }
 
+export function clearAuthSession() {
+  setAuthSession(null)
+}
+
 async function postAuth(path: string, body: Record<string, string>) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
@@ -63,7 +67,7 @@ export function login(input: { email: string; password: string }) {
 }
 
 export function logout() {
-  setAuthSession(null)
+  clearAuthSession()
   if (browser) {
     window.localStorage.removeItem('certiflow-report-status-snapshot')
   }

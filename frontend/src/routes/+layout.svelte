@@ -9,7 +9,10 @@
   import { userSettings } from '$lib/settings'
   import '$lib/styles.css'
 
-  $: isAuthPage = $page.url.pathname.startsWith('/auth')
+  $: isPublicPage =
+    $page.url.pathname.startsWith('/auth') ||
+    $page.url.pathname === '/401' ||
+    $page.url.pathname === '/404'
 
   onMount(() => {
     if (!browser) return
@@ -19,7 +22,7 @@
     userSettings.load()
     const stopStatusMonitor = storedSession ? startReportStatusMonitor() : () => {}
 
-    if (!$page.url.pathname.startsWith('/auth') && !storedSession) {
+    if (!isPublicPage && !storedSession) {
       goto('/auth')
     }
 
@@ -29,7 +32,7 @@
   })
 </script>
 
-{#if isAuthPage}
+{#if isPublicPage}
   <slot />
 {:else}
   <AppShell>

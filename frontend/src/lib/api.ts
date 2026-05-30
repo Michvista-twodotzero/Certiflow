@@ -1,5 +1,7 @@
+import { browser } from '$app/environment'
+import { goto } from '$app/navigation'
 import type { ApiResponse, AuthSession, Report, Violation, UserSettings } from '@certiflow/shared'
-import { API_BASE_URL, getStoredSession } from './auth'
+import { API_BASE_URL, clearAuthSession, getStoredSession } from './auth'
 
 type ReportRecord = Omit<Report, 'uploadedAt'> & { uploadedAt: string | Date }
 type ViolationRecord = Omit<Violation, 'detectedAt'> & { detectedAt: string | Date }
@@ -7,7 +9,12 @@ type ViolationRecord = Omit<Violation, 'detectedAt'> & { detectedAt: string | Da
 function requireSession(): AuthSession {
   const session = getStoredSession()
   if (!session) {
-    throw new Error('You need to log in first')
+    if (browser) {
+      clearAuthSession()
+      goto('/401')
+    }
+
+    throw new Error('Unauthorized')
   }
 
   return session
@@ -20,6 +27,13 @@ function createHeaders(extra?: HeadersInit): Headers {
   return headers
 }
 
+function handleUnauthorized() {
+  clearAuthSession()
+  if (browser) {
+    void goto('/401')
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -27,6 +41,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   const payload = (await response.json()) as ApiResponse<T>
+  if (response.status === 401) {
+    handleUnauthorized()
+  }
+
   if (!response.ok || !payload.success) {
     throw new Error(payload.error || 'Request failed')
   }
@@ -92,6 +110,10 @@ export async function submitReport(payload: {
   })
 
   const record = (await response.json()) as ApiResponse<ReportRecord>
+  if (response.status === 401) {
+    handleUnauthorized()
+  }
+
   if (!response.ok || !record.success || !record.data) {
     throw new Error(record.error || 'Unable to submit report')
   }
