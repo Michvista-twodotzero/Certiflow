@@ -12,6 +12,10 @@ interface ViolationProps {
   detectedAt: Date
 }
 
+type ViolationObject = Omit<ViolationProps, 'severity'> & {
+  severity: string
+}
+
 export class ViolationEntity {
   private props: ViolationProps
 
@@ -53,7 +57,14 @@ export class ViolationEntity {
     })
   }
 
-  toObject(): ViolationProps {
-    return { ...this.props }
+  toObject(): ViolationObject {
+    return {
+      ...this.props,
+      severity: this.props.severity.toString(),
+    }
+  }
+
+  toJSON(): ViolationObject {
+    return this.toObject()
   }
 }

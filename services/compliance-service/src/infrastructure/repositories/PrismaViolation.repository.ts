@@ -1,3 +1,4 @@
+import { ViolationSeverity as PrismaViolationSeverity } from '@prisma/client'
 import { prisma } from '../prisma/client'
 import { IViolationRepository } from '../../domain/repositories'
 import { ViolationEntity } from '../../domain/entities/Violation.entity'
@@ -7,7 +8,7 @@ type ViolationRecord = {
   id: string
   reportId: string
   ruleReference: string
-  severity: string
+  severity: PrismaViolationSeverity
   description: string
   suggestion: string
   sector: string | null
@@ -69,7 +70,7 @@ export class PrismaViolationRepository implements IViolationRepository {
         id: record.id,
         reportId: record.reportId,
         ruleReference: record.ruleReference,
-        severity: record.severity.toString(),
+        severity: record.severity as PrismaViolationSeverity,
         description: record.description,
         suggestion: record.suggestion,
         sector: record.sector ?? null,
@@ -93,7 +94,7 @@ export class PrismaViolationRepository implements IViolationRepository {
       where: { id: data.id },
       data: {
         ruleReference: data.ruleReference,
-        severity: data.severity.toString(),
+        severity: data.severity as PrismaViolationSeverity,
         description: data.description,
         suggestion: data.suggestion,
         sector: data.sector ?? null,
