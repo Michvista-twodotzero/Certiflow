@@ -12,7 +12,7 @@ dotenv.config()
 
 const app = express()
 const logger = createLogger('api-gateway')
-const PORT = process.env.GATEWAY_PORT || 3000
+const PORT = process.env.PORT || process.env.GATEWAY_PORT || 3000
 
 const COMPLIANCE_SERVICE_URL = process.env.COMPLIANCE_SERVICE_URL || 'http://localhost:3001'
 const AI_WORKER_URL = process.env.AI_WORKER_URL || 'http://localhost:3002'

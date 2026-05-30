@@ -6,6 +6,13 @@ CertiFlow is a backend platform that automates construction site safety audits u
 
 ---
 
+## Live Deployment
+
+- Frontend: https://frontend-production-da3b.up.railway.app
+- API Gateway: https://api-gateway-production-c30b.up.railway.app
+
+---
+
 ## Architecture
 
 CertiFlow uses a **microservices architecture** with three independent services:
