@@ -1,4 +1,4 @@
-<div class="scene" aria-hidden="true">
+<div class="scene">
   <div class="glow glow-left"></div>
   <div class="glow glow-right"></div>
   <div class="grid"></div>
@@ -9,6 +9,15 @@
   <div class="spot spot-blue"></div>
   <div class="spot spot-red"></div>
   <div class="scan-line"></div>
+
+  <div class="copy">
+    <p class="eyebrow">Core engine</p>
+    <h3>Automated OSHA Referencing</h3>
+    <p>
+      CertiFlow reviews construction photos and reports, extracts text with OCR or native parsing, and surfaces likely violations with action-oriented summaries.
+    </p>
+    <div class="chip">Rule-aware compliance checks</div>
+  </div>
 </div>
 
 <style>
@@ -27,6 +36,34 @@
     box-shadow: 0 40px 80px rgba(0, 0, 0, 0.42);
     transform: perspective(1400px) rotateY(-18deg) rotateX(8deg);
     transform-style: preserve-3d;
+  }
+
+  .copy {
+    position: absolute;
+    left: 1.2rem;
+    bottom: 1.2rem;
+    z-index: 2;
+    width: min(24rem, calc(100% - 2.4rem));
+    padding: 1rem 1rem 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(7, 12, 22, 0.72);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.22);
+  }
+
+  .copy h3 {
+    margin: 0 0 0.45rem;
+    color: #f4f7ff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: -0.03em;
+  }
+
+  .copy p {
+    margin: 0;
+    color: rgba(229, 235, 246, 0.78);
+    line-height: 1.55;
+    font-size: 0.92rem;
   }
 
   .glow,
@@ -162,6 +199,26 @@
     animation: scan 4.5s ease-in-out infinite;
   }
 
+  .eyebrow {
+    margin: 0 0 0.3rem;
+    color: #f7b24f;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+
+  .chip {
+    display: inline-flex;
+    margin-top: 0.85rem;
+    padding: 0.4rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.77rem;
+  }
+
   @keyframes scan {
     0%,
     100% {
@@ -177,6 +234,14 @@
   @media (max-width: 760px) {
     .scene {
       min-height: 20rem;
+    }
+
+    .copy {
+      left: 0.85rem;
+      right: 0.85rem;
+      bottom: 0.85rem;
+      width: auto;
+      padding: 0.85rem;
     }
   }
 </style>

@@ -13,7 +13,7 @@
         <p>
           CertiFlow reviews construction photos and reports, extracts text with OCR or native parsing, and surfaces likely violations with action-oriented summaries.
         </p>
-        <div class="chip">Rule-aware compliance checks</div>
+        <div class="chip">Scan, flag, and stay in sync</div>
       </div>
     </article>
 
