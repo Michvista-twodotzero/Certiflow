@@ -8,6 +8,6 @@
   description="Your session is missing, expired, or no longer valid. Sign in again to continue using CertiFlow."
   primaryLabel="Go to sign in"
   primaryHref="/auth"
-  secondaryLabel="Back to dashboard"
+  secondaryLabel="Back to home"
   secondaryHref="/"
 />

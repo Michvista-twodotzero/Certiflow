@@ -10,6 +10,7 @@
   import '$lib/styles.css'
 
   $: isPublicPage =
+    $page.url.pathname === '/' ||
     $page.url.pathname.startsWith('/auth') ||
     $page.url.pathname === '/401' ||
     $page.url.pathname === '/404'

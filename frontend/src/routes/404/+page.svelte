@@ -5,7 +5,7 @@
 <StatusPage
   code="404"
   title="Page not found"
-  description="The page you asked for doesn’t exist, was moved, or you do not have access to it."
+  description="The page you asked for does not exist, was moved, or you do not have access to it."
   primaryLabel="Go home"
   primaryHref="/"
   secondaryLabel="Sign in"

@@ -53,7 +53,7 @@
     </a>
 
     <nav class="nav-list">
-      <a class:active={isActive('/')} href="/">
+      <a class:active={isActive('/dashboard')} href="/dashboard">
         <Icon name="dashboard" size={18} />
         <span>Dashboard</span>
       </a>

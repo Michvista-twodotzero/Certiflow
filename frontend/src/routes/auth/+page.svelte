@@ -22,7 +22,7 @@
         await login({ email, password })
       }
 
-      goto('/')
+      goto('/dashboard')
     } catch (err) {
       error = err instanceof Error ? err.message : 'Authentication failed'
     } finally {
