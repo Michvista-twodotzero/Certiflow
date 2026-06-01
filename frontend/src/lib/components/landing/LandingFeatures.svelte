@@ -79,6 +79,10 @@
     min-height: 14rem;
   }
 
+  .card:not(.wide) {
+    grid-column: span 4;
+  }
+
   .card h3 {
     margin: 0.8rem 0 0.4rem;
     font-family: 'Space Grotesk', sans-serif;
@@ -140,6 +144,10 @@
 
     .wide {
       grid-template-columns: 1fr;
+    }
+
+    .card:not(.wide) {
+      grid-column: auto;
     }
   }
 </style>
