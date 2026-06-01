@@ -1,26 +1,34 @@
 <script lang="ts">
+  import LandingVisual from '$lib/components/landing/LandingVisual.svelte'
+
   export let loggedIn = false
 </script>
 
 <section class="hero" id="features">
-  <div class="content">
-    <div class="pill">
-      <span class="dot"></span>
-      <span>AI systems online</span>
+  <div class="layout">
+    <div class="content">
+      <div class="pill">
+        <span class="dot"></span>
+        <span>AI systems online</span>
+      </div>
+
+      <h1>Automate Your Site <br /><span>Safety Compliance</span></h1>
+
+      <p>
+        AI-driven audit analysis that reviews site photos and reports, extracts text when needed, and flags likely OSHA violations in seconds.
+      </p>
+
+      <div class="actions">
+        <a class="button primary" href="/auth">Get Started Free</a>
+        <a class="button secondary" href="#how-it-works">View Demo</a>
+        {#if loggedIn}
+          <a class="button tertiary" href="/dashboard">Open Dashboard</a>
+        {/if}
+      </div>
     </div>
 
-    <h1>Automate Your Site <br /><span>Safety Compliance</span></h1>
-
-    <p>
-      AI-driven audit analysis that reviews site photos and reports, extracts text when needed, and flags likely OSHA violations in seconds.
-    </p>
-
-    <div class="actions">
-      <a class="button primary" href="/auth">Get Started Free</a>
-      <a class="button secondary" href="#how-it-works">View Demo</a>
-      {#if loggedIn}
-        <a class="button tertiary" href="/dashboard">Open Dashboard</a>
-      {/if}
+    <div class="visual" aria-hidden="true">
+      <LandingVisual />
     </div>
   </div>
 </section>
@@ -28,20 +36,29 @@
 <style>
   .hero {
     position: relative;
-    display: flex;
-    align-items: center;
     min-height: calc(100vh - 4.8rem);
     padding: 3.2rem 1.2rem 2rem;
     overflow: hidden;
   }
 
-  .content {
-    position: relative;
+  .layout {
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+    gap: 2rem;
+    align-items: center;
   }
 
   .content {
+    position: relative;
     max-width: 44rem;
     padding-left: 0.1rem;
+  }
+
+  .visual {
+    justify-self: end;
+    width: min(100%, 42rem);
   }
 
   .pill {
@@ -125,6 +142,16 @@
     .hero {
       min-height: auto;
       padding-top: 2rem;
+    }
+
+    .layout {
+      grid-template-columns: 1fr;
+    }
+
+    .visual {
+      justify-self: stretch;
+      width: 100%;
+      margin-top: 0.5rem;
     }
   }
 
