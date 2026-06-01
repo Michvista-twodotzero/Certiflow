@@ -1,5 +1,5 @@
 <script lang="ts">
-  import HeatmapVisual from './HeatmapVisual.svelte'
+  import SiteRiskVisual from './SiteRiskVisual.svelte'
   export let loggedIn = false
 </script>
 
@@ -34,7 +34,7 @@
   </div>
 
   <div class="visual-wrap" aria-hidden="true">
-    <HeatmapVisual />
+    <SiteRiskVisual />
   </div>
 </section>
 

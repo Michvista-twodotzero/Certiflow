@@ -1,5 +1,5 @@
 <script lang="ts">
-  import HeatmapVisual from './HeatmapVisual.svelte'
+  import SiteRiskVisual from './SiteRiskVisual.svelte'
   import Icon from '$lib/components/Icon.svelte'
 </script>
 
@@ -18,7 +18,7 @@
       </div>
 
       <div class="visual">
-        <HeatmapVisual compact />
+        <SiteRiskVisual compact />
       </div>
     </article>
 

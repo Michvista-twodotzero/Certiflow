@@ -2,7 +2,7 @@
   export let compact = false
 </script>
 
-<div class:compact class="heatmap">
+<div class:compact class="scene">
   <div class="glow glow-left"></div>
   <div class="glow glow-right"></div>
   <div class="grid"></div>
@@ -17,7 +17,7 @@
   <div class="badge badge-top">
     <span class="kicker">Live audit</span>
     <strong>Visual risk map</strong>
-    <span>Illustrative heat zones for safety review</span>
+    <span>Illustrative safety zones for review</span>
   </div>
 
   <div class="badge badge-bottom">
@@ -28,7 +28,7 @@
 </div>
 
 <style>
-  .heatmap {
+  .scene {
     position: relative;
     width: 100%;
     min-height: 28rem;
@@ -45,7 +45,7 @@
     transform-style: preserve-3d;
   }
 
-  .heatmap.compact {
+  .scene.compact {
     min-height: 16rem;
     transform: perspective(1000px) rotateY(-14deg) rotateX(9deg);
   }
