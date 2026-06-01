@@ -110,26 +110,27 @@
     </div>
 
     <div class="hero-visual" aria-hidden="true">
-      <div class="hero-scene">
+      <div class="hero-scene heatmap-scene">
         <div class="scene-glow scene-glow-left"></div>
         <div class="scene-glow scene-glow-right"></div>
-        <div class="construction-haze"></div>
-        <div class="beam beam-1"></div>
-        <div class="beam beam-2"></div>
-        <div class="beam beam-3"></div>
-        <div class="tower tower-1"></div>
-        <div class="tower tower-2"></div>
-        <div class="tower tower-3"></div>
-        <div class="site-floor"></div>
+        <div class="heatmap-grid"></div>
+        <div class="heatmap-plane"></div>
+        <div class="heatmap-slab slab-back"></div>
+        <div class="heatmap-slab slab-front"></div>
+        <div class="heat-spot hot-1"></div>
+        <div class="heat-spot hot-2"></div>
+        <div class="heat-spot hot-3"></div>
+        <div class="heat-spot hot-4"></div>
+        <div class="scan-line"></div>
         <div class="scene-card floating-card card-1">
-          <span class="card-kicker">Live audit</span>
-          <strong>Violations detected</strong>
-          <span>Queued for review in real time</span>
+          <span class="card-kicker">Live risk map</span>
+          <strong>3D safety heatmap</strong>
+          <span>Hot zones and priority hazards highlighted</span>
         </div>
         <div class="scene-card floating-card card-2">
           <span class="card-kicker">OSHA focus</span>
-          <strong>Compliance summary</strong>
-          <span>Hazards and next actions highlighted</span>
+          <strong>Structured review</strong>
+          <span>Confidence bands and safe areas stay visible</span>
         </div>
       </div>
     </div>
@@ -177,8 +178,15 @@
         </div>
         <div class="capability-illustration">
           <div class="blueprint-grid"></div>
-          <div class="tower tower-large"></div>
-          <div class="beam beam-large"></div>
+          <div class="heatmap-plane heatmap-plane-card"></div>
+          <div class="heatmap-slab slab-back slab-back-card"></div>
+          <div class="heat-spot hot-card hot-card-1"></div>
+          <div class="heat-spot hot-card hot-card-2"></div>
+          <div class="heat-spot hot-card hot-card-3"></div>
+          <div class="heatmap-legend">
+            <span>Risk density</span>
+            <div class="legend-bar"></div>
+          </div>
         </div>
       </article>
 
@@ -447,9 +455,9 @@
     border-radius: 1.25rem;
     overflow: hidden;
     background:
-      linear-gradient(180deg, rgba(8, 12, 25, 0.15) 0%, rgba(8, 12, 25, 0.55) 100%),
-      radial-gradient(circle at 78% 30%, rgba(67, 120, 204, 0.24), transparent 30%),
-      radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.4), transparent 35%);
+      linear-gradient(180deg, rgba(8, 12, 25, 0.12) 0%, rgba(8, 12, 25, 0.62) 100%),
+      radial-gradient(circle at 78% 30%, rgba(67, 120, 204, 0.22), transparent 30%),
+      radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.42), transparent 35%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 40px 80px rgba(0, 0, 0, 0.42);
     transform: rotateY(-18deg) rotateX(8deg);
@@ -467,10 +475,12 @@
   }
 
   .scene-glow,
-  .construction-haze,
-  .beam,
-  .tower,
-  .site-floor,
+  .heatmap-grid,
+  .heatmap-plane,
+  .heatmap-slab,
+  .heat-spot,
+  .scan-line,
+  .heatmap-legend,
   .scene-card {
     position: absolute;
   }
@@ -497,93 +507,159 @@
     background: rgba(100, 210, 255, 0.1);
   }
 
-  .construction-haze {
-    inset: auto 0 0;
-    height: 10rem;
-    background: linear-gradient(180deg, transparent 0%, rgba(9, 13, 25, 0.75) 100%);
-  }
-
-  .site-floor {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 26%;
+  .heatmap-scene {
     background:
-      linear-gradient(180deg, rgba(8, 12, 25, 0) 0%, rgba(0, 0, 0, 0.32) 100%),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    background-size: auto, 3rem 100%;
-    transform: translateZ(-20px);
+      linear-gradient(180deg, rgba(8, 12, 25, 0.08) 0%, rgba(8, 12, 25, 0.6) 100%),
+      radial-gradient(circle at 25% 25%, rgba(255, 159, 10, 0.16), transparent 18%),
+      radial-gradient(circle at 68% 34%, rgba(100, 210, 255, 0.2), transparent 22%),
+      linear-gradient(145deg, #11182b 0%, #080c16 58%, #05070e 100%);
   }
 
-  .tower {
-    bottom: 5.5rem;
-    width: 0.8rem;
-    background: linear-gradient(180deg, rgba(245, 247, 255, 0.45), rgba(245, 247, 255, 0.1));
-    box-shadow: 0 0 28px rgba(255, 255, 255, 0.08);
+  .heatmap-grid,
+  .heatmap-plane,
+  .heatmap-slab,
+  .heat-spot,
+  .scan-line,
+  .heatmap-legend {
+    position: absolute;
   }
 
-  .tower::before,
-  .tower::after {
+  .heatmap-grid {
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 3rem 3rem;
+    opacity: 0.5;
+    transform: perspective(700px) rotateX(68deg) translateY(5rem);
+    transform-origin: center bottom;
+  }
+
+  .heatmap-plane {
+    left: 10%;
+    right: 8%;
+    bottom: 18%;
+    height: 38%;
+    border-radius: 1rem;
+    background:
+      radial-gradient(circle at 18% 72%, rgba(255, 164, 38, 0.34), transparent 16%),
+      radial-gradient(circle at 60% 40%, rgba(100, 210, 255, 0.22), transparent 20%),
+      radial-gradient(circle at 76% 58%, rgba(255, 69, 58, 0.26), transparent 16%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+      0 18px 36px rgba(0, 0, 0, 0.35);
+    transform: perspective(900px) rotateX(72deg) rotateZ(-12deg);
+    transform-origin: center center;
+  }
+
+  .heatmap-slab {
+    background: rgba(10, 14, 26, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.22);
+    transform: perspective(900px) rotateX(68deg) rotateZ(-12deg);
+    transform-origin: center center;
+  }
+
+  .slab-back {
+    left: 12%;
+    top: 20%;
+    width: 54%;
+    height: 18%;
+    opacity: 0.55;
+  }
+
+  .slab-front {
+    right: 11%;
+    bottom: 13%;
+    width: 42%;
+    height: 16%;
+    opacity: 0.68;
+  }
+
+  .heat-spot {
+    width: 6.25rem;
+    height: 6.25rem;
+    border-radius: 999px;
+    filter: blur(4px);
+    transform: translateZ(20px);
+  }
+
+  .heat-spot::before {
     content: '';
     position: absolute;
-    left: 50%;
-    width: 6rem;
-    height: 0.12rem;
-    background: rgba(255, 255, 255, 0.24);
-    transform-origin: left center;
+    inset: 20%;
+    border-radius: inherit;
+    background: inherit;
+    filter: blur(18px);
+    opacity: 0.7;
   }
 
-  .tower::before {
-    top: 12%;
-    transform: translateX(-50%) rotate(8deg);
+  .hot-1 {
+    left: 18%;
+    top: 35%;
+    background: radial-gradient(circle, rgba(255, 182, 63, 0.9) 0%, rgba(255, 159, 10, 0.18) 52%, transparent 74%);
   }
 
-  .tower::after {
-    top: 28%;
-    transform: translateX(-50%) rotate(-8deg);
+  .hot-2 {
+    left: 43%;
+    top: 26%;
+    width: 5.25rem;
+    height: 5.25rem;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(100, 210, 255, 0.32) 42%, transparent 70%);
   }
 
-  .tower-1 {
-    left: 13%;
-    height: 56%;
+  .hot-3 {
+    right: 16%;
+    top: 30%;
+    background: radial-gradient(circle, rgba(255, 93, 93, 0.9) 0%, rgba(255, 69, 58, 0.24) 50%, transparent 72%);
   }
 
-  .tower-2 {
-    left: 39%;
-    height: 70%;
+  .hot-4 {
+    right: 26%;
+    bottom: 22%;
+    width: 7rem;
+    height: 7rem;
+    background: radial-gradient(circle, rgba(255, 159, 10, 0.92) 0%, rgba(255, 159, 10, 0.2) 38%, transparent 74%);
   }
 
-  .tower-3 {
-    left: 62%;
-    height: 62%;
+  .scan-line {
+    left: 12%;
+    right: 12%;
+    top: 55%;
+    height: 0.18rem;
+    background: linear-gradient(90deg, transparent 0%, rgba(100, 210, 255, 0.78) 20%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 159, 10, 0.72) 80%, transparent 100%);
+    box-shadow: 0 0 24px rgba(100, 210, 255, 0.35);
+    transform: rotate(-8deg);
+    animation: scan 4.5s ease-in-out infinite;
   }
 
-  .beam {
-    height: 0.15rem;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.45) 100%);
-    box-shadow: 0 0 22px rgba(255, 255, 255, 0.18);
-    transform-origin: left center;
+  .heatmap-legend {
+    left: 1rem;
+    bottom: 1rem;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.8rem;
+    background: rgba(7, 10, 18, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .beam-1 {
-    left: 16%;
-    top: 11%;
-    width: 58%;
-    transform: rotate(18deg);
+  .heatmap-legend span {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(237, 243, 252, 0.8);
   }
 
-  .beam-2 {
-    left: 36%;
-    top: 19%;
-    width: 54%;
-    transform: rotate(10deg);
-  }
-
-  .beam-3 {
-    left: 53%;
-    top: 27%;
-    width: 41%;
-    transform: rotate(7deg);
+  .legend-bar {
+    width: 8.5rem;
+    height: 0.65rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #17315f 0%, #3b6ca8 25%, #64d2ff 50%, #ffbf43 72%, #ff453a 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   .floating-card {
@@ -798,20 +874,74 @@
     opacity: 0.5;
   }
 
-  .tower-large {
-    left: 1.4rem;
-    bottom: 1rem;
-    height: 9rem;
-    width: 0.8rem;
-    background: linear-gradient(180deg, rgba(245, 247, 255, 0.4), rgba(245, 247, 255, 0.12));
+  .heatmap-plane-card {
+    left: 12%;
+    right: 10%;
+    bottom: 18%;
+    height: 44%;
+    border-radius: 0.8rem;
+    background:
+      radial-gradient(circle at 20% 70%, rgba(255, 159, 10, 0.34), transparent 18%),
+      radial-gradient(circle at 54% 38%, rgba(100, 210, 255, 0.24), transparent 22%),
+      radial-gradient(circle at 78% 55%, rgba(255, 69, 58, 0.26), transparent 16%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+    transform: perspective(900px) rotateX(72deg) rotateZ(-10deg);
+    transform-origin: center center;
   }
 
-  .beam-large {
-    left: 2rem;
-    top: 1.8rem;
-    width: 80%;
-    transform: rotate(16deg);
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.45));
+  .slab-back-card {
+    left: 18%;
+    top: 22%;
+    width: 44%;
+    height: 18%;
+    opacity: 0.55;
+    transform: perspective(900px) rotateX(68deg) rotateZ(-10deg);
+  }
+
+  .hot-card {
+    filter: blur(2px);
+  }
+
+  .hot-card-1 {
+    left: 24%;
+    top: 36%;
+    width: 5.6rem;
+    height: 5.6rem;
+    background: radial-gradient(circle, rgba(255, 187, 73, 0.88) 0%, rgba(255, 159, 10, 0.18) 52%, transparent 76%);
+  }
+
+  .hot-card-2 {
+    left: 46%;
+    top: 28%;
+    width: 4.8rem;
+    height: 4.8rem;
+    background: radial-gradient(circle, rgba(100, 210, 255, 0.9) 0%, rgba(100, 210, 255, 0.22) 45%, transparent 74%);
+  }
+
+  .hot-card-3 {
+    right: 18%;
+    top: 34%;
+    width: 6rem;
+    height: 6rem;
+    background: radial-gradient(circle, rgba(255, 69, 58, 0.88) 0%, rgba(255, 69, 58, 0.22) 50%, transparent 76%);
+  }
+
+  .heatmap-legend {
+    left: auto;
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  @keyframes scan {
+    0%,
+    100% {
+      transform: translateY(-6%) rotate(-8deg);
+      opacity: 0.75;
+    }
+    50% {
+      transform: translateY(26%) rotate(-8deg);
+      opacity: 1;
+    }
   }
 
   .pricing-cta {
