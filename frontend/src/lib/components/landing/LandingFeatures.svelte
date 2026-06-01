@@ -1,5 +1,4 @@
 <script lang="ts">
-  import SiteRiskVisual from './SiteRiskVisual.svelte'
   import Icon from '$lib/components/Icon.svelte'
 </script>
 
@@ -15,10 +14,6 @@
           CertiFlow reviews construction photos and reports, extracts text with OCR or native parsing, and surfaces likely violations with action-oriented summaries.
         </p>
         <div class="chip">Rule-aware compliance checks</div>
-      </div>
-
-      <div class="visual">
-        <SiteRiskVisual compact />
       </div>
     </article>
 
@@ -102,10 +97,6 @@
 
   .wide {
     grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 1fr);
-    gap: 1rem;
-    align-items: center;
   }
 
   .copy {
@@ -133,16 +124,8 @@
     font-size: 0.8rem;
   }
 
-  .visual {
-    min-height: 14rem;
-  }
-
   @media (max-width: 940px) {
     .grid {
-      grid-template-columns: 1fr;
-    }
-
-    .wide {
       grid-template-columns: 1fr;
     }
 

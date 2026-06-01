@@ -1,17 +1,8 @@
 <script lang="ts">
-  import SiteRiskVisual from './SiteRiskVisual.svelte'
   export let loggedIn = false
 </script>
 
 <section class="hero" id="features">
-  <div class="backdrop" aria-hidden="true">
-    <img
-      alt=""
-      src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6Hyd5znxucS125gcRHZd9pXMxoJXAqU9tGKXWRNjVpzBC16-Meq5g1JEweSsF-6S33RNDpIinKMgrwtXJvJKDu3NuZCkwbjwfIxiIPbmTzFPowDeL2kFTW7VOY-5tRAcTqyxODv6bGA0UwJY5AEiGriLsNZc4eaQP6tbNWwht66wszW1Tuqc3HDW2GGi0UgGrNP2YfqCl-cOHEqgKse1xEOIBpHtZDuK_9CoUXDviLYTEUatyEP5Wgb5lgp46Uiki8is6vLZKOxg"
-    />
-    <div class="overlay"></div>
-  </div>
-
   <div class="content">
     <div class="pill">
       <span class="dot"></span>
@@ -32,47 +23,20 @@
       {/if}
     </div>
   </div>
-
-  <div class="visual-wrap" aria-hidden="true">
-    <SiteRiskVisual />
-  </div>
 </section>
 
 <style>
   .hero {
     position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(24rem, 34rem);
+    display: flex;
     align-items: center;
-    gap: 2rem;
     min-height: calc(100vh - 4.8rem);
     padding: 3.2rem 1.2rem 2rem;
     overflow: hidden;
   }
 
-  .backdrop {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    opacity: 0.42;
-  }
-
-  .backdrop img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(9, 13, 25, 0.94) 0%, rgba(9, 13, 25, 0.72) 45%, rgba(9, 13, 25, 0.12) 100%);
-  }
-
-  .content,
-  .visual-wrap {
+  .content {
     position: relative;
-    z-index: 1;
   }
 
   .content {
@@ -157,22 +121,10 @@
     background: rgba(255, 255, 255, 0.02);
   }
 
-  .visual-wrap {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    perspective: 1400px;
-  }
-
   @media (max-width: 1080px) {
     .hero {
-      grid-template-columns: 1fr;
       min-height: auto;
       padding-top: 2rem;
-    }
-
-    .visual-wrap {
-      order: -1;
     }
   }
 
