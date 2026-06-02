@@ -4,7 +4,7 @@ import * as https from 'https'
 import type { IncomingMessage } from 'http'
 import * as path from 'path'
 import { AuditResult, createLogger } from '@certiflow/shared'
-import { createAuditContents, createGeminiClient, deleteHostedFile, ensureOshaFileSearchStore, uploadReportFile } from '../rag/retriever'
+import { OSHA_FALLBACK_REFERENCE, createAuditContents, createGeminiClient, deleteHostedFile, ensureOshaFileSearchStore, uploadReportFile } from '../rag/retriever'
 import { extractDocumentContent } from '../ingestion/pipeline'
 
 const logger = createLogger('ai-worker:auditor')
@@ -47,7 +47,17 @@ export async function auditReport(
   try {
     tempFilePath = await downloadFile(fileUrl)
     const extractedDocument = await extractDocumentContent(tempFilePath, fileUrl, fileMeta)
-    const oshaStore = await ensureOshaFileSearchStore(ai)
+    let oshaStoreName: string | null = null
+
+    try {
+      const oshaStore = await ensureOshaFileSearchStore(ai)
+      oshaStoreName = oshaStore.name
+    } catch (error) {
+      logger.warn('OSHA file search store unavailable, using embedded reference notes', {
+        error,
+      })
+    }
+
     hostedReportFiles.push(await uploadReportFile(ai, tempFilePath, fileUrl, fileMeta))
 
     if (extractedDocument.content.trim()) {
@@ -57,7 +67,7 @@ export async function auditReport(
 
     logger.info('Gemini file inputs ready for audit', {
       reportFileCount: hostedReportFiles.length,
-      oshaStoreName: oshaStore.name,
+      oshaStoreName,
       extractionStrategy: extractedDocument.strategy,
       sourceKind: extractedDocument.sourceKind,
       ocrPerformed: extractedDocument.ocrPerformed,
@@ -70,23 +80,30 @@ export async function auditReport(
       `Project: ${projectName}`,
       'Use the uploaded site report file as the primary evidence.',
       'If a plain-text transcript is attached, treat it as OCR or extracted support for the uploaded report.',
-      'Use the File Search tool over OSHA 29 CFR 1926 as the compliance source of truth.',
+      ...(oshaStoreName
+        ? ['Use the File Search tool over OSHA 29 CFR 1926 as the compliance source of truth.']
+        : [
+            'Use these OSHA reference notes as the compliance source of truth:',
+            OSHA_FALLBACK_REFERENCE,
+          ]),
       'Return only the JSON response.',
     ].join('\n\n')
 
     const result = await retryGenerateContent(() => ai.models.generateContent({
       model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
       contents: createAuditContents(hostedReportFiles, prompt),
-      config: {
-        tools: [
-          {
-            fileSearch: {
-              fileSearchStoreNames: [oshaStore.name],
-              topK: 8,
-            },
-          },
-        ],
-      },
+      config: oshaStoreName
+        ? {
+            tools: [
+              {
+                fileSearch: {
+                  fileSearchStoreNames: [oshaStoreName],
+                  topK: 8,
+                },
+              },
+            ],
+          }
+        : undefined,
     }))
     const rawResponse = readGeneratedText(result)
 

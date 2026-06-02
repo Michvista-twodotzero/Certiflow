@@ -2,7 +2,7 @@ import { browser } from '$app/environment'
 import { get } from 'svelte/store'
 import type { Report, ReportStatus } from '@certiflow/shared'
 import { fetchReports } from './api'
-import { notifications, playNotificationPing } from './notifications'
+import { notifications } from './notifications'
 import { getReportSourceFileName } from './report-file'
 import { userSettings } from './settings'
 
@@ -65,13 +65,9 @@ function notifyOnTransitions(reports: Report[], previous: StatusSnapshot) {
 
     const reportLabel = getReportSourceFileName(report)
     if (report.status === 'COMPLETE') {
-      notifications.add(`${reportLabel} finished analysis and is ready to review.`, 'success')
+      notifications.add(`${reportLabel} finished analysis and is ready to review.`, 'success', { playSound: settings.notificationSound })
     } else {
-      notifications.add(`${reportLabel} failed during analysis. Please review and retry the upload.`, 'warning')
-    }
-
-    if (settings.notificationSound) {
-      playNotificationPing()
+      notifications.add(`${reportLabel} failed during analysis. Please review and retry the upload.`, 'warning', { playSound: settings.notificationSound })
     }
   }
 }

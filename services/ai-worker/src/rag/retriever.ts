@@ -9,7 +9,7 @@ const OSHA_FILE_SEARCH_DISPLAY_NAME = process.env.GEMINI_FILE_SEARCH_DISPLAY_NAM
 const FILE_POLL_INTERVAL_MS = 2000
 const FILE_POLL_TIMEOUT_MS = 60_000
 const RETRY_DELAYS_MS = [1000, 3000, 6000]
-const OSHA_FALLBACK_REFERENCE = [
+export const OSHA_FALLBACK_REFERENCE = [
   'OSHA 29 CFR 1926 reference notes.',
   'Use this fallback only when the full OSHA PDF is unavailable.',
   'Focus the review on common construction hazards: fall protection, PPE, ladders, scaffolds, housekeeping, electrical safety, and trench/excavation protection.',
@@ -33,7 +33,7 @@ let cachedOshaStore: FileSearchStore | null = null
 export function createGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not set')
+    throw new Error('GEMINI_API_KEY is not set. Add it to the worker environment so audits can run.')
   }
 
   return new GoogleGenAI({ apiKey })

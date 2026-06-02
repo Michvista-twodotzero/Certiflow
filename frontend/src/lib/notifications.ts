@@ -14,7 +14,7 @@ function createNotificationStore() {
 
   return {
     subscribe,
-    add(message: string, type: Notification['type'] = 'info') {
+    add(message: string, type: Notification['type'] = 'info', options?: { playSound?: boolean }) {
       const notification: Notification = {
         id: crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2),
         message,
@@ -24,6 +24,10 @@ function createNotificationStore() {
       }
 
       update((items) => [notification, ...items].slice(0, 50))
+
+      if (options?.playSound !== false) {
+        playNotificationPing()
+      }
     },
     markRead(id: string) {
       update((items) =>
@@ -52,6 +56,7 @@ export function playNotificationPing() {
   if (!AudioContextCtor) return
 
   const context = new AudioContextCtor()
+  void context.resume().catch(() => {})
   const oscillator = context.createOscillator()
   const gain = context.createGain()
 
