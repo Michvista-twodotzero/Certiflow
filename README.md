@@ -135,6 +135,9 @@ cp .env.example .env
 # Fill in all values in .env
 ```
 
+For Railway deployments, set `PUBLIC_API_BASE_URL` to your public API gateway URL, for example:
+`https://your-api-gateway.up.railway.app/api`
+
 ### 3. Start with Docker
 ```bash
 docker-compose up --build
