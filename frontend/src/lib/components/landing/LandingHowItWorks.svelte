@@ -5,17 +5,23 @@
     {
       icon: 'upload',
       title: '1. Upload Reports',
-      body: 'Drag in site photos, PDFs, and daily logs from the field.',
+      body: 'Drag and drop site, high-res drone photos, or 360° panoramas directly into our secure cloud portal.',
+      color: '#ff9f0a',
+      bg: 'rgba(255, 159, 10, 0.12)',
     },
     {
       icon: 'robot',
       title: '2. AI Audit',
-      body: 'CertiFlow reviews the content, extracts text, and flags likely safety issues.',
+      body: 'Our proprietary engine references thousands of OSHA regulations instantly, performing a pixel-perfect audit of your site.',
+      color: '#64d2ff',
+      bg: 'rgba(100, 210, 255, 0.12)',
     },
     {
       icon: 'check',
       title: '3. Resolve Risks',
-      body: 'Review violations, assign follow-up, and mark items resolved in the dashboard.',
+      body: 'Receive a detailed task list of actionable fixes. Assign them to managers and mark violations as resolved in real-time.',
+      color: '#ff453a',
+      bg: 'rgba(255, 69, 58, 0.12)',
     },
   ]
 </script>
@@ -27,10 +33,9 @@
   </div>
 
   <div class="grid">
-    {#each steps as step, index}
+    {#each steps as step}
       <article class="card">
-        <div class="bar" style={`background: var(${index === 0 ? '--accent' : index === 1 ? '--info' : '--danger'});`}></div>
-        <div class="icon">
+        <div class="icon-box" style="background: {step.bg}; color: {step.color};">
           <Icon name={step.icon} size={22} />
         </div>
         <h3>{step.title}</h3>
@@ -42,14 +47,14 @@
 
 <style>
   .section {
-    width: min(1200px, calc(100% - 2rem));
+    width: min(1200px, calc(100% - 4rem));
     margin: 0 auto;
-    padding: 2.5rem 0 0;
+    padding: 3.5rem 0 0;
   }
 
   .heading {
     text-align: center;
-    margin-bottom: 1.2rem;
+    margin-bottom: 2rem;
   }
 
   h2 {
@@ -57,6 +62,7 @@
     font-family: 'Space Grotesk', sans-serif;
     font-size: clamp(1.7rem, 3vw, 2.4rem);
     letter-spacing: -0.04em;
+    color: #fff;
   }
 
   .rule {
@@ -70,52 +76,54 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .card {
     position: relative;
-    padding: 1.2rem 1.1rem 1.15rem;
-    background: rgba(18, 24, 39, 0.86);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
-    min-height: 12rem;
+    padding: 1.5rem 1.3rem 1.4rem;
+    background: rgba(14, 19, 32, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.3s ease, transform 0.3s ease;
   }
 
-  .bar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 0.22rem;
-    height: 100%;
+  .card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
   }
 
-  .icon {
+  .icon-box {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-bottom: 1rem;
-    color: #f9c46b;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 0.45rem;
+    margin-bottom: 1.2rem;
   }
 
   h3 {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.6rem;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1.05rem;
+    color: #fff;
+    font-weight: 600;
   }
 
   p {
     margin: 0;
-    color: rgba(229, 235, 246, 0.73);
-    line-height: 1.6;
-    font-size: 0.94rem;
+    color: rgba(229, 235, 246, 0.62);
+    line-height: 1.65;
+    font-size: 0.9rem;
   }
 
   @media (max-width: 900px) {
     .grid {
       grid-template-columns: 1fr;
+      max-width: 32rem;
+      margin: 0 auto;
     }
   }
 </style>

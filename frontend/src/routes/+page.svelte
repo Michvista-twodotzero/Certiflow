@@ -38,10 +38,7 @@
 <style>
   .landing-root {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at top left, rgba(255, 159, 10, 0.08), transparent 28%),
-      radial-gradient(circle at 82% 16%, rgba(100, 210, 255, 0.07), transparent 20%),
-      linear-gradient(180deg, #070b16 0%, #090d19 100%);
+    background: #060913;
     color: #eef1f7;
     overflow-x: clip;
   }

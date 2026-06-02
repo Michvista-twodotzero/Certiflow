@@ -9,16 +9,17 @@
   </a>
 
   <div class="links" aria-label="Primary">
-    <a href="#features">Features</a>
+    <a href="#features" class="active">Features</a>
     <a href="#how-it-works">How it Works</a>
     <a href="#pricing">Pricing</a>
     <a href="/auth">Log In</a>
   </div>
 
   <div class="actions">
-    <a class="action secondary" href="/auth">Get Started</a>
     {#if loggedIn}
       <a class="action primary" href="/dashboard">Open Dashboard</a>
+    {:else}
+      <a class="action primary" href="/auth">Get Started</a>
     {/if}
   </div>
 </nav>
@@ -32,38 +33,60 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.9rem 1.2rem;
-    background: rgba(9, 13, 25, 0.82);
-    backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.75rem 2rem;
+    background: rgba(9, 13, 25, 0.88);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
-    color: #f9c46b;
+    gap: 0.55rem;
+    color: #fff;
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
   }
 
   .brand img {
-    width: 1.45rem;
-    height: 1.45rem;
+    width: 1.5rem;
+    height: 1.5rem;
     object-fit: contain;
   }
 
   .links {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
-    color: rgba(240, 244, 250, 0.78);
-    font-size: 0.95rem;
+    gap: 1.8rem;
+    color: rgba(240, 244, 250, 0.72);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .links a {
+    position: relative;
+    padding-bottom: 0.2rem;
   }
 
   .links a:hover {
     color: #fff;
+  }
+
+  .links a.active {
+    color: #fff;
+  }
+
+  .links a.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: #ff9f0a;
+    border-radius: 999px;
   }
 
   .actions {
@@ -73,35 +96,28 @@
   }
 
   .action {
-    border-radius: 0.25rem;
-    padding: 0.62rem 0.95rem;
-    font-weight: 700;
-    font-size: 0.92rem;
-    transition:
-      transform 0.2s ease,
-      opacity 0.2s ease,
-      background-color 0.2s ease;
+    border-radius: 0.3rem;
+    padding: 0.55rem 1.1rem;
+    font-weight: 600;
+    font-size: 0.88rem;
+    transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
   }
 
   .action:hover {
     transform: translateY(-1px);
   }
 
-  .action.secondary {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-  }
-
   .action.primary {
     background: linear-gradient(180deg, #ffad2f 0%, #ff9f0a 100%);
     color: #140d00;
+    border-radius: 0.35rem;
   }
 
   @media (max-width: 860px) {
     .nav {
       flex-wrap: wrap;
       justify-content: center;
+      padding: 0.75rem 1rem;
     }
 
     .links {
@@ -109,6 +125,7 @@
       width: 100%;
       justify-content: center;
       flex-wrap: wrap;
+      gap: 1rem;
     }
   }
 </style>
