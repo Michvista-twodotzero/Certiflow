@@ -1,7 +1,8 @@
 import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
 import type { ApiResponse, AuthSession, Report, Violation, UserSettings } from '@certiflow/shared'
-import { API_BASE_URL, clearAuthSession, getStoredSession } from './auth'
+import { clearAuthSession, getStoredSession } from './auth'
+import { getApiBaseUrl } from './api-base-url'
 
 type ReportRecord = Omit<Report, 'uploadedAt'> & { uploadedAt: string | Date }
 type ViolationRecord = Omit<Violation, 'detectedAt'> & { detectedAt: string | Date }
@@ -35,10 +36,16 @@ function handleUnauthorized() {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: createHeaders(init?.headers),
-  })
+  let response: Response
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      ...init,
+      headers: createHeaders(init?.headers),
+    })
+  } catch {
+    throw new Error('Cannot reach the API gateway. Check PUBLIC_API_BASE_URL and Railway deployment status.')
+  }
 
   const payload = (await response.json()) as ApiResponse<T>
   if (response.status === 401) {
@@ -103,11 +110,17 @@ export async function submitReport(payload: {
   formData.append('notes', payload.notes || '')
   formData.append('file', payload.file)
 
-  const response = await fetch(`${API_BASE_URL}/reports`, {
-    method: 'POST',
-    headers: createHeaders(),
-    body: formData,
-  })
+  let response: Response
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}/reports`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: formData,
+    })
+  } catch {
+    throw new Error('Cannot reach the API gateway. Check PUBLIC_API_BASE_URL and Railway deployment status.')
+  }
 
   const record = (await response.json()) as ApiResponse<ReportRecord>
   if (response.status === 401) {
@@ -136,5 +149,3 @@ export function saveSettings(
     body: JSON.stringify(payload),
   })
 }
-
-export { API_BASE_URL }

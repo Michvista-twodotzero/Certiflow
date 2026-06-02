@@ -1,5 +1,6 @@
 import type { ApiResponse, Project } from '@certiflow/shared'
-import { API_BASE_URL, getStoredSession } from './auth'
+import { getStoredSession } from './auth'
+import { getApiBaseUrl } from './api-base-url'
 
 type ProjectRecord = Omit<Project, 'createdAt' | 'updatedAt'> & {
   createdAt: string | Date
@@ -24,7 +25,7 @@ function toProject(record: ProjectRecord): Project {
 }
 
 export async function fetchProjects(): Promise<Project[]> {
-  const response = await fetch(`${API_BASE_URL}/projects`, {
+  const response = await fetch(`${getApiBaseUrl()}/projects`, {
     headers: createHeaders(),
   })
 
@@ -37,7 +38,7 @@ export async function fetchProjects(): Promise<Project[]> {
 }
 
 export async function createProject(input: { name: string; location: string }): Promise<Project> {
-  const response = await fetch(`${API_BASE_URL}/projects`, {
+  const response = await fetch(`${getApiBaseUrl()}/projects`, {
     method: 'POST',
     headers: new Headers({
       'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ export async function createProject(input: { name: string; location: string }): 
 }
 
 export async function updateProject(projectId: string, input: { name: string; location: string }): Promise<Project> {
-  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+  const response = await fetch(`${getApiBaseUrl()}/projects/${projectId}`, {
     method: 'PATCH',
     headers: new Headers({
       'Content-Type': 'application/json',
@@ -73,7 +74,7 @@ export async function updateProject(projectId: string, input: { name: string; lo
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+  const response = await fetch(`${getApiBaseUrl()}/projects/${projectId}`, {
     method: 'DELETE',
     headers: createHeaders(),
   })

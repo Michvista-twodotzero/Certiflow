@@ -1,9 +1,9 @@
 import { writable } from 'svelte/store'
 import { browser } from '$app/environment'
 import type { AuthSession, ApiResponse } from '@certiflow/shared'
+import { getApiBaseUrl } from './api-base-url'
 
 const STORAGE_KEY = 'certiflow-auth-session'
-export const API_BASE_URL = (import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:3000/api').replace(/\/$/, '')
 
 function loadStoredSession(): AuthSession | null {
   if (!browser) return null
@@ -41,13 +41,19 @@ export function clearAuthSession() {
 }
 
 async function postAuth(path: string, body: Record<string, string>) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
+  let response: Response
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    throw new Error('Cannot reach the API gateway. Check PUBLIC_API_BASE_URL and Railway deployment status.')
+  }
 
   const payload = (await response.json()) as ApiResponse<AuthSession>
   if (!response.ok || !payload.success || !payload.data) {
