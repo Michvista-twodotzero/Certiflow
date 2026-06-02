@@ -3,11 +3,52 @@ import * as http from 'http'
 import * as https from 'https'
 import type { IncomingMessage } from 'http'
 import * as path from 'path'
+import { Type } from '@google/genai'
 import { AuditResult, createLogger } from '@certiflow/shared'
 import { OSHA_FALLBACK_REFERENCE, createAuditContents, createGeminiClient, deleteHostedFile, ensureOshaFileSearchStore, uploadReportFile } from '../rag/retriever'
 import { extractDocumentContent } from '../ingestion/pipeline'
 
 const logger = createLogger('ai-worker:auditor')
+const AUDIT_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    violations: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          severity: {
+            type: Type.STRING,
+            format: 'enum',
+            enum: ['CRITICAL', 'MAJOR', 'MINOR'],
+          },
+          ruleReference: {
+            type: Type.STRING,
+          },
+          description: {
+            type: Type.STRING,
+          },
+          suggestion: {
+            type: Type.STRING,
+          },
+          sector: {
+            type: Type.STRING,
+          },
+        },
+        required: ['severity', 'ruleReference', 'description', 'suggestion'],
+        propertyOrdering: ['severity', 'ruleReference', 'description', 'suggestion', 'sector'],
+      },
+    },
+    summary: {
+      type: Type.STRING,
+    },
+    actionableCount: {
+      type: Type.INTEGER,
+    },
+  },
+  required: ['violations', 'summary', 'actionableCount'],
+  propertyOrdering: ['violations', 'summary', 'actionableCount'],
+} as const
 
 const SYSTEM_PROMPT = `
 You are a senior construction safety auditor.
@@ -94,6 +135,8 @@ export async function auditReport(
       contents: createAuditContents(hostedReportFiles, prompt),
       config: oshaStoreName
         ? {
+            responseMimeType: 'application/json',
+            responseSchema: AUDIT_RESPONSE_SCHEMA,
             tools: [
               {
                 fileSearch: {
@@ -103,7 +146,10 @@ export async function auditReport(
               },
             ],
           }
-        : undefined,
+        : {
+            responseMimeType: 'application/json',
+            responseSchema: AUDIT_RESPONSE_SCHEMA,
+          },
     }))
     const rawResponse = readGeneratedText(result)
 
