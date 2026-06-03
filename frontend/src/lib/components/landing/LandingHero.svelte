@@ -2,7 +2,7 @@
   export let loggedIn = false
 </script>
 
-<section class="hero" id="features">
+<section class="hero">
   <img src="/hero-bg.png" alt="" class="hero-bg" />
   <div class="hero-overlay"></div>
 

@@ -26,7 +26,9 @@ export class UploadReportUseCase {
     const project = await this.projectRepository.findById(dto.projectId)
     if (!project) throw new ValidationError('projectId does not match an existing project')
 
-    const fileUrl = await this.fileUploadService.upload(file)
+    const fileUrl = await this.fileUploadService.upload(file, {
+      publicBaseUrl: dto.publicBaseUrl,
+    })
     logger.info('File uploaded to Cloudinary', { fileUrl })
 
     const report = ReportEntity.create({

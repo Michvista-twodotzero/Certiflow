@@ -2,7 +2,7 @@
   import Icon from '$lib/components/Icon.svelte'
 </script>
 
-<section class="section">
+<section class="section" id="features">
   <h2>Safety Infrastructure, Digitized</h2>
 
   <div class="grid">

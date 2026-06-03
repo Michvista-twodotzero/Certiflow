@@ -3,6 +3,7 @@ import * as http from 'http'
 import * as https from 'https'
 import type { IncomingMessage } from 'http'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
 import { Type } from '@google/genai'
 import { AuditResult, createLogger } from '@certiflow/shared'
 import { OSHA_FALLBACK_REFERENCE, createAuditContents, createGeminiClient, deleteHostedFile, ensureOshaFileSearchStore, uploadReportFile } from '../rag/retriever'
@@ -249,6 +250,14 @@ function downloadFile(url: string): Promise<string> {
     fs.mkdirSync(tempDir, { recursive: true })
   }
 
+  if (url.startsWith('file://')) {
+    return copyLocalFile(fileURLToPath(url), tempDir)
+  }
+
+  if (!/^https?:\/\//i.test(url) && fs.existsSync(url)) {
+    return copyLocalFile(path.resolve(url), tempDir)
+  }
+
   const extension = path.extname(new URL(url).pathname) || '.bin'
   const tempPath = path.join(tempDir, `report-${Date.now()}${extension}`)
   const requestClient = url.startsWith('https://') ? https : http
@@ -277,4 +286,11 @@ function downloadFile(url: string): Promise<string> {
       reject(error)
     })
   })
+}
+
+function copyLocalFile(sourcePath: string, tempDir: string) {
+  const extension = path.extname(sourcePath) || '.bin'
+  const tempPath = path.join(tempDir, `report-${Date.now()}${extension}`)
+  fs.copyFileSync(sourcePath, tempPath)
+  return Promise.resolve(tempPath)
 }

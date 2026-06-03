@@ -15,7 +15,7 @@
       {:else}
         <a class="button dark" href="/auth">Join CertiFlow Today</a>
       {/if}
-      <a class="button light" href="#features">Schedule a Demo</a>
+      <a class="button light" href="#how-it-works">Schedule a Demo</a>
     </div>
   </div>
 </section>

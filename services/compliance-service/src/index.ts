@@ -9,17 +9,21 @@ import routes from './infrastructure/http/routes'
 import settingsRoutes from './infrastructure/http/settings.routes'
 import { createLogger, errorResponse } from '@certiflow/shared'
 import { prisma } from './infrastructure/prisma/client'
+import { getReportUploadRoot } from './infrastructure/storage/report-file-storage'
 
 dotenv.config()
 
 const app = express()
 const logger = createLogger('compliance-service')
 const PORT = process.env.COMPLIANCE_SERVICE_PORT || 3001
+const reportUploadRoot = getReportUploadRoot()
 
+app.set('trust proxy', true)
 app.use(helmet())
 app.use(cors())
 app.use(morgan('dev'))
 app.use(express.json())
+app.use('/uploads', express.static(reportUploadRoot))
 
 app.get('/health', async (_req, res) => {
   try {
@@ -34,6 +38,15 @@ app.use('/api/auth', authRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/reports', routes)
+
+logger.info('Report upload storage ready', {
+  uploadRoot: reportUploadRoot,
+  cloudinaryConfigured: Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET,
+  ),
+})
 
 app.use((err: any, _req: any, res: any, _next: any) => {
   logger.error('Unhandled error', { error: err.message })
