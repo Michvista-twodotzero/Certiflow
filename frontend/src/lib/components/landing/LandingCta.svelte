@@ -2,7 +2,7 @@
   export let loggedIn = false
 </script>
 
-<section class="cta" id="pricing">
+<section class="cta" id="get-started">
   <div class="inner">
     <h2>Ready to upgrade your safety<br />culture?</h2>
     <p>

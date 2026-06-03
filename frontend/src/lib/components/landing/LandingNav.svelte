@@ -11,7 +11,7 @@
   <div class="links" aria-label="Primary">
     <a href="#features" class="active">Features</a>
     <a href="#how-it-works">How it Works</a>
-    <a href="#pricing">Pricing</a>
+    <a href="#get-started">Get Started</a>
     <a href="/auth">Log In</a>
   </div>
 

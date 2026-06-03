@@ -51,9 +51,9 @@
       <div class="icon-box info">
         <Icon name="dashboard" size={24} />
       </div>
-      <h3>Comprehensive Site Mapping</h3>
+      <h3>Project & Report Overview</h3>
       <p class="desc">
-        Integrate drone telemetry to create 3D safety heatmaps of your entire job site.
+        Review projects, reports, and violations in one place so the team can track progress without bouncing between tools.
       </p>
     </article>
   </div>
