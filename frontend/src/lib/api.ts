@@ -30,7 +30,7 @@ function createHeaders(extra?: HeadersInit): Headers {
 
 function handleUnauthorized() {
   clearAuthSession()
-  if (browser) {
+  if (browser && !window.location.pathname.startsWith('/auth')) {
     void goto('/401')
   }
 }

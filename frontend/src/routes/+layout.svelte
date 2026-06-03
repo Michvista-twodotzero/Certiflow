@@ -21,7 +21,7 @@
     const storedSession = getStoredSession()
     authSession.set(storedSession)
     userSettings.load()
-    const stopStatusMonitor = storedSession ? startReportStatusMonitor() : () => {}
+    const stopStatusMonitor = storedSession && !isPublicPage ? startReportStatusMonitor() : () => {}
 
     if (!isPublicPage && !storedSession) {
       goto('/401')
