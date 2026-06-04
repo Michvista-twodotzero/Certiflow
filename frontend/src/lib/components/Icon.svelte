@@ -119,6 +119,10 @@
   {:else if name === 'camera'}
     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
     <circle cx="12" cy="13" r="4" />
+  {:else if name === 'volume-2'}
+    <path d="M11 5 6 9H2v6h4l5 4V5z" />
+    <path d="M15.5 8.5a4 4 0 0 1 0 7" />
+    <path d="M18.5 5.5a8 8 0 0 1 0 13" />
   {:else if name === 'globe'}
     <circle cx="12" cy="12" r="10" />
     <line x1="2" y1="12" x2="22" y2="12" />

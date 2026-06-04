@@ -1,7 +1,7 @@
 <script lang="ts">
   import { authSession, logout } from '$lib/auth'
   import { goto } from '$app/navigation'
-  import { notifications } from '$lib/notifications'
+  import { notifications, playNotificationPing } from '$lib/notifications'
   import { onMount } from 'svelte'
   import { userSettings } from '$lib/settings'
   import { fetchSettings, saveSettings } from '$lib/api'
@@ -12,6 +12,7 @@
   let notificationSound = true
   let showSaved = false
   let saving = false
+  let testingSound = false
 
   onMount(async () => {
     const localSettings = userSettings.load()
@@ -54,6 +55,17 @@
   function handleLogout() {
     logout()
     goto('/auth')
+  }
+
+  async function handleTestSound() {
+    testingSound = true
+    try {
+      playNotificationPing()
+    } finally {
+      window.setTimeout(() => {
+        testingSound = false
+      }, 600)
+    }
   }
 </script>
 
@@ -108,11 +120,18 @@
         <div>
           <strong style="color: #fff; font-size: 0.95rem;">Notification Sound</strong>
           <p class="muted" style="margin: 0.2rem 0 0 0; font-size: 0.85rem;">Play a short ping when a new report-status notification arrives.</p>
+          <p class="muted" style="margin: 0.35rem 0 0 0; font-size: 0.8rem;">The current sound is generated in code, so there is no MP3 file to edit yet.</p>
         </div>
-        <label class="toggle">
-          <input type="checkbox" bind:checked={notificationSound} />
-          <span class="toggle-slider"></span>
-        </label>
+        <div style="display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; justify-content: flex-end;">
+          <button class="ghost-button" type="button" on:click={handleTestSound} disabled={testingSound}>
+            <Icon name="volume-2" size={14} />
+            <span>{testingSound ? 'Playing...' : 'Test Sound'}</span>
+          </button>
+          <label class="toggle">
+            <input type="checkbox" bind:checked={notificationSound} />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
       </div>
     </article>
 
