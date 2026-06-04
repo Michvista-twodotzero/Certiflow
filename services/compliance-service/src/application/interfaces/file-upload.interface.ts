@@ -1,7 +1,4 @@
 export interface IFileUploadService {
-  upload(
-    file: Express.Multer.File,
-    options?: { publicBaseUrl?: string },
-  ): Promise<string>
+  upload(file: Express.Multer.File): Promise<string>
   delete(fileUrl: string): Promise<void>
 }

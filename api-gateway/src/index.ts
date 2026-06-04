@@ -64,11 +64,6 @@ app.use(
 )
 
 app.use(
-  '/uploads',
-  proxyToCompliance('/uploads')
-)
-
-app.use(
   '/api/settings',
   authMiddleware,
   proxyToCompliance('/api/settings')

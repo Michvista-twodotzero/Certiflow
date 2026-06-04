@@ -32,10 +32,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response, next
       return
     }
 
-    const report = await uploadReportUseCase.execute({
-      ...req.body,
-      publicBaseUrl: resolvePublicBaseUrl(req),
-    }, req.file!)
+    const report = await uploadReportUseCase.execute(req.body, req.file!)
     res.status(201).json(successResponse(report.toObject(), 'Report submitted. AI audit in progress.'))
   } catch (error) {
     next(error)
@@ -100,24 +97,3 @@ router.patch('/violations/:id/resolve', async (req: Request, res: Response, next
 })
 
 export default router
-
-function resolvePublicBaseUrl(req: Request) {
-  const forwardedProto = normalizeForwardedHeader(req.headers['x-forwarded-proto'])
-  const forwardedHost = normalizeForwardedHeader(req.headers['x-forwarded-host'])
-  const protocol = forwardedProto || req.protocol || 'https'
-  const host = forwardedHost || req.get('host')
-
-  if (!host) {
-    return ''
-  }
-
-  return `${protocol}://${host}`
-}
-
-function normalizeForwardedHeader(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0]?.split(',')[0]?.trim() || ''
-  }
-
-  return value?.split(',')[0]?.trim() || ''
-}

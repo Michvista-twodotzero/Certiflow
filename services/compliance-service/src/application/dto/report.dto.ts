@@ -3,7 +3,6 @@ import { ReportType } from '@certiflow/shared'
 export interface UploadReportDTO {
   projectId: string
   projectName?: string
-  publicBaseUrl?: string
   reportType: ReportType
   notes?: string
 }
